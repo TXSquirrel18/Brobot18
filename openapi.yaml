@@ -1,20 +1,113 @@
 openapi: 3.1.0
 info:
-  title: Brobot18 API
-  description: Simple API endpoint for Brobot18 used with ChatGPT Actions.
+  title: Brobot Hub API
   version: 1.0.0
+  description: >
+    API for BrobotGPT to manage hubs, logs, and flow tracking across Presto's life systems.
+
 servers:
   - url: https://brobot18.onrender.com
+
 paths:
-  /:
+  /hub/{id}:
     get:
-      operationId: getBrobotStatus
-      summary: Get Brobot API status
-      description: Returns a simple message confirming the API is running.
+      operationId: getHubStatus
+      summary: Retrieve the current status of a specific hub.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hub ID (C, H, P, L, S, T, W)
+          schema:
+            type: string
       responses:
         '200':
-          description: Success message confirming the server is online.
+          description: Hub data including current projects and status summary
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                type: object
+                properties:
+                  hub:
+                    type: string
+                  activeProjects:
+                    type: array
+                    items:
+                      type: string
+                  pausedProjects:
+                    type: array
+                    items:
+                      type: string
+                  completedProjects:
+                    type: array
+                    items:
+                      type: string
+
+  /hub/{id}/log:
+    post:
+      operationId: logHubEntry
+      summary: Add a journal entry, update, or reflection to a hub.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [journal, win, update]
+                content:
+                  type: string
+              required: [type, content]
+      responses:
+        '200':
+          description: Log successfully added
+
+  /flow-tracker:
+    get:
+      operationId: getFlowTracker
+      summary: Retrieve current flow tracker counts across all hubs.
+      responses:
+        '200':
+          description: Flow tracker data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    type: integer
+                  paused:
+                    type: integer
+                  completed:
+                    type: integer
+                  archived:
+                    type: integer
+
+  /flow-tracker/update:
+    post:
+      operationId: updateFlowStatus
+      summary: Update the status of a project in the flow tracker.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project:
+                  type: string
+                newStatus:
+                  type: string
+                  enum: [active, paused, completed, archived]
+              required: [project, newStatus]
+      responses:
+        '200':
+          description: Project status updated
