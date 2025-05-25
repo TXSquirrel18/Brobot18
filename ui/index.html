@@ -11,7 +11,6 @@
       font-family: 'Arial', sans-serif;
       text-align: center;
       margin: 0;
-      padding: 0;
     }
 
     h1 {
@@ -39,132 +38,27 @@
       border-color: #00FFFF;
     }
 
-    #project-list, #interaction {
-      margin: 2em auto;
-      padding: 1em;
-      max-width: 90%;
-      text-align: left;
-    }
-
-    #project-list ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    #project-list li {
-      padding: 0.3em 0;
-      color: #ccc;
-    }
-
-    input, button {
-      font-size: 1em;
-      padding: 0.6em;
-      border-radius: 8px;
-      border: none;
-      margin-top: 0.5em;
-    }
-
-    #commandInput {
-      width: 70%;
-      margin-right: 1em;
-    }
-
-    #response {
-      margin-top: 1em;
-      color: #0ff;
+    .sub {
+      font-size: 1.1em;
+      color: #888;
+      margin-bottom: 1em;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Brobot Deck</h1>
-    <p>Select a Hub</p>
+    <p class="sub">Select a Hub</p>
   </header>
 
   <main>
     <a class="button" href="hub-creative.html">[C]reative</a>
     <a class="button" href="hub-home.html">[H]ome</a>
     <a class="button" href="hub-legal.html">[L]egal</a>
-    <a class="button" href="hub-wellness.html">[P]ersonal Wellness</a>
+    <a class="button" href="hub-personal.html">[P]ersonal Wellness</a>
     <a class="button" href="hub-social.html">[S]ocial</a>
     <a class="button" href="hub-temporal.html">[T]emporal</a>
     <a class="button" href="hub-work.html">[W]ork</a>
-
-    <div id="project-list"></div>
-
-    <div id="interaction">
-      <h2>Talk to Brobot</h2>
-      <input type="text" id="commandInput" placeholder="Ask Brobot..." />
-      <button onclick="sendCommand()">Send</button>
-      <div id="response"></div>
-    </div>
   </main>
-
-  <script>
-    const apiBase = 'https://brobot18.onrender.com';
-
-    async function getFlowData() {
-      const res = await fetch(`${apiBase}/jit-plugin/getFlowTracker`);
-      return await res.json();
-    }
-
-    function renderProjects(data, showPaused = false) {
-      const active = data.active || [];
-      const paused = showPaused ? data.paused || [] : [];
-
-      const container = document.createElement('div');
-      container.innerHTML = `
-        <h2>Projects</h2>
-        <ul>
-          ${active.map(name => `<li>[Active] ${name}</li>`).join('')}
-          ${paused.map(name => `<li>[Paused] ${name}</li>`).join('')}
-        </ul>
-      `;
-      const old = document.getElementById('project-list');
-      if (old) old.replaceWith(container);
-      container.id = 'project-list';
-    }
-
-    async function loadProjects(showPaused = false) {
-      try {
-        const data = await getFlowData();
-        renderProjects(data, showPaused);
-      } catch (e) {
-        console.error('Failed to load projects:', e);
-      }
-    }
-
-    async function sendCommand() {
-      const input = document.getElementById('commandInput');
-      const responseBox = document.getElementById('response');
-      const command = input.value.trim();
-      if (!command) return;
-
-      responseBox.innerText = 'Thinking...';
-
-      try {
-        const res = await fetch(`${apiBase}/jit-plugin/logHubEntry`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: 'W',  // You can route to a specific hub
-            type: 'journal',
-            content: command
-          })
-        });
-
-        if (res.ok) {
-          responseBox.innerText = 'Logged to Brobot!';
-        } else {
-          responseBox.innerText = 'Error logging your input.';
-        }
-      } catch (e) {
-        responseBox.innerText = 'Connection issue.';
-      }
-    }
-
-    loadProjects(false);
-    setInterval(() => loadProjects(true), 86400000); // refresh once per day
-  </script>
 </body>
 </html>
