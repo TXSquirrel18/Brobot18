@@ -134,3 +134,35 @@ paths:
       responses:
         '200':
           description: Intent layer successfully activated
+  /hub/{id}/task:
+    post:
+      operationId: addHubTask
+      summary: Add a task to a specific hub.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hub ID (C, H, P, L, S, T, W)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                notes:
+                  type: string
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                dueDate:
+                  type: string
+                  format: date
+              required: [title, priority]
+      responses:
+        '200':
+          description: Task successfully added
