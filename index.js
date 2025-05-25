@@ -1,3 +1,6 @@
+app.get('/', (req, res) => {
+  res.send('Brobot18 API is running.');
+});
 const express = require('express');
 const app = express();
 const port = 3000;
