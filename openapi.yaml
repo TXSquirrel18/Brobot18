@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: Brobot18 API
+  description: Simple API endpoint for Brobot18 used with ChatGPT Actions.
+  version: 1.0.0
+servers:
+  - url: https://brobot18.onrender.com
+paths:
+  /:
+    get:
+      operationId: getBrobotStatus
+      summary: Get Brobot API status
+      description: Returns a simple message confirming the API is running.
+      responses:
+        '200':
+          description: Success message confirming the server is online.
+          content:
+            text/plain:
+              schema:
+                type: string
