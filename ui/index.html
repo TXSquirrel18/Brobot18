@@ -18,15 +18,21 @@
       margin-top: 1.5em;
     }
 
+    .sub {
+      font-size: 1.1em;
+      color: #888;
+      margin-bottom: 1em;
+    }
+
     .button {
       display: block;
       margin: 1em auto;
       padding: 1em 2em;
       width: 80%;
       font-size: 1.2em;
-      color: #00FFFF;
+      color: #00FFFF; /* Cyan text */
       background-color: transparent;
-      border: 2px solid #FF00FF;
+      border: 2px solid #FF00FF; /* Magenta border */
       border-radius: 12px;
       text-decoration: none;
       transition: all 0.2s ease-in-out;
@@ -38,14 +44,23 @@
       border-color: #00FFFF;
     }
 
-    .sub {
-      font-size: 1.1em;
-      color: #888;
-      margin-bottom: 1em;
+    .interaction {
+      margin-top: 3em;
+    }
+
+    .interaction input {
+      padding: 0.8em;
+      width: 70%;
+      font-size: 1em;
+      border: 2px solid #00FFFF;
+      background: #111;
+      color: #00FFFF;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
+
   <header>
     <h1>Brobot Deck</h1>
     <p class="sub">Select a Hub</p>
@@ -60,5 +75,11 @@
     <a class="button" href="hub-temporal.html">[T]emporal</a>
     <a class="button" href="hub-work.html">[W]ork</a>
   </main>
+
+  <div class="interaction">
+    <p class="sub">Talk to Brobot</p>
+    <input type="text" placeholder="Type a command..." />
+  </div>
+
 </body>
 </html>
