@@ -1,13 +1,12 @@
 openapi: 3.1.0
 info:
-  title: Brobot18 Unified API
-  description: >
-    Combined API for Brobot18, including status, hub management, flow tracking, and intent layer activation.
-  version: 1.0.0
+  title: Brobot Hub API
+  version: 1.1.0
+  description: |
+    API for BrobotGPT to manage hubs, logs, flow tracking, tasks, and adaptive learning.
 
 servers:
   - url: https://brobot18.onrender.com
-    description: Main production server
 
 paths:
   /:
@@ -46,13 +45,16 @@ paths:
                     type: string
                   activeProjects:
                     type: array
-                    items: { type: string }
+                    items:
+                      type: string
                   pausedProjects:
                     type: array
-                    items: { type: string }
+                    items:
+                      type: string
                   completedProjects:
                     type: array
-                    items: { type: string }
+                    items:
+                      type: string
 
   /hub/{id}/log:
     post:
@@ -81,59 +83,6 @@ paths:
         '200':
           description: Log successfully added
 
-  /flow-tracker:
-    get:
-      operationId: getFlowTracker
-      summary: Retrieve current flow tracker counts across all hubs.
-      responses:
-        '200':
-          description: Flow tracker data
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  active: { type: integer }
-                  paused: { type: integer }
-                  completed: { type: integer }
-                  archived: { type: integer }
-
-  /flow-tracker/update:
-    post:
-      operationId: updateFlowStatus
-      summary: Update the status of a project in the flow tracker.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                project: { type: string }
-                newStatus:
-                  type: string
-                  enum: [active, paused, completed, archived]
-              required: [project, newStatus]
-      responses:
-        '200':
-          description: Project status updated
-
-  /activate-intent-layer:
-    post:
-      operationId: activateIntentLayer
-      summary: Activate the Brobot adaptive intent engine
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                trackEdits:
-                  type: boolean
-      responses:
-        '200':
-          description: Intent layer successfully activated
   /hub/{id}/task:
     post:
       operationId: addHubTask
@@ -166,3 +115,69 @@ paths:
       responses:
         '200':
           description: Task successfully added
+
+  /flow-tracker:
+    get:
+      operationId: getFlowTracker
+      summary: Retrieve current flow tracker counts across all hubs.
+      responses:
+        '200':
+          description: Flow tracker data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    type: integer
+                  paused:
+                    type: integer
+                  completed:
+                    type: integer
+                  archived:
+                    type: integer
+
+  /flow-tracker/update:
+    post:
+      operationId: updateFlowStatus
+      summary: Update the status of a project in the flow tracker.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project:
+                  type: string
+                newStatus:
+                  type: string
+                  enum: [active, paused, completed, archived]
+              required: [project, newStatus]
+      responses:
+        '200':
+          description: Project status updated
+
+  /intent-feedback:
+    post:
+      operationId: logIntentFeedback
+      summary: Logs command outcomes and corrections for learning.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                command:
+                  type: string
+                tag:
+                  type: string
+                result:
+                  type: string
+                correction:
+                  type: string
+              required: [command, tag, result]
+      responses:
+        '200':
+          description: Feedback accepted
