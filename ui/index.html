@@ -1,42 +1,122 @@
-<script>
-  const apiBase = 'https://brobot18.onrender.com';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Brobot Deck</title>
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
 
-  async function getFlowData() {
-    const res = await fetch(`${apiBase}/jit-plugin/getFlowTracker`);
-    const data = await res.json();
-    return data;
-  }
+    h1 {
+      font-size: 2.2em;
+      margin-top: 1.5em;
+    }
 
-  function renderProjects(data, showPaused = false) {
-    const active = data.active;
-    const paused = showPaused ? data.paused : [];
+    .button {
+      display: block;
+      margin: 1em auto;
+      padding: 1em 2em;
+      width: 80%;
+      font-size: 1.2em;
+      color: #00FFFF;
+      background-color: transparent;
+      border: 2px solid #FF00FF;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.2s ease-in-out;
+    }
 
-    const container = document.createElement('div');
-    container.innerHTML = `
-      <h2>Projects</h2>
-      <ul>
-        ${active.map(name => `<li>[Active] ${name}</li>`).join('')}
-        ${paused.map(name => `<li>[Paused] ${name}</li>`).join('')}
-      </ul>
-    `;
+    .button:hover {
+      background-color: #111;
+      color: #FF00FF;
+      border-color: #00FFFF;
+    }
 
-    const old = document.getElementById('project-list');
-    if (old) old.remove();
+    #project-list {
+      margin: 2em auto;
+      padding: 1em;
+      max-width: 90%;
+      color: #ccc;
+      text-align: left;
+    }
 
-    container.id = 'project-list';
-    document.body.appendChild(container);
-  }
+    #project-list ul {
+      list-style: none;
+      padding: 0;
+    }
 
-  async function loadProjects(showPaused) {
-    const data = await getFlowData();
-    renderProjects(data, showPaused);
-  }
+    #project-list li {
+      padding: 0.3em 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Brobot Deck</h1>
+    <p>Select a Hub</p>
+  </header>
 
-  // Initial load (active only)
-  loadProjects(false);
+  <main>
+    <a class="button" href="#">[C]reative</a>
+    <a class="button" href="#">[H]ome</a>
+    <a class="button" href="#">[L]egal</a>
+    <a class="button" href="#">[P]ersonal Wellness</a>
+    <a class="button" href="#">[S]ocial</a>
+    <a class="button" href="#">[T]emporal</a>
+    <a class="button" href="#">[W]ork</a>
+    
+    <div id="project-list"></div>
+  </main>
 
-  // Once per day, re-show with paused
-  setInterval(() => {
-    loadProjects(true);
-  }, 86400000); // 24 hours
-</script>
+  <script>
+    const apiBase = 'https://brobot18.onrender.com';
+
+    async function getFlowData() {
+      const res = await fetch(`${apiBase}/jit-plugin/getFlowTracker`);
+      const data = await res.json();
+      return data;
+    }
+
+    function renderProjects(data, showPaused = false) {
+      const active = data.active || [];
+      const paused = showPaused ? data.paused || [] : [];
+
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <h2>Projects</h2>
+        <ul>
+          ${active.map(name => `<li>[Active] ${name}</li>`).join('')}
+          ${paused.map(name => `<li>[Paused] ${name}</li>`).join('')}
+        </ul>
+      `;
+
+      const old = document.getElementById('project-list');
+      if (old) old.replaceWith(container);
+      container.id = 'project-list';
+    }
+
+    async function loadProjects(showPaused = false) {
+      try {
+        const data = await getFlowData();
+        renderProjects(data, showPaused);
+      } catch (e) {
+        console.error('Failed to load projects:', e);
+      }
+    }
+
+    loadProjects(false); // Load only active projects initially
+
+    // Show paused once a day
+    setInterval(() => {
+      loadProjects(true);
+    }, 86400000);
+  </script>
+</body>
+</html>
