@@ -1,12 +1,13 @@
 openapi: 3.1.0
 info:
-  title: Brobot18 API
-  description: Full API for Brobot18 with hub management, flow tracking, and intent activation.
+  title: Brobot18 Unified API
+  description: >
+    Combined API for Brobot18, including status, hub management, flow tracking, and intent layer activation.
   version: 1.0.0
 
 servers:
   - url: https://brobot18.onrender.com
-    description: Primary Render deployment
+    description: Main production server
 
 paths:
   /:
@@ -69,13 +70,13 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type, content]
               properties:
                 type:
                   type: string
                   enum: [journal, win, update]
                 content:
                   type: string
+              required: [type, content]
       responses:
         '200':
           description: Log successfully added
@@ -107,12 +108,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [project, newStatus]
               properties:
                 project: { type: string }
                 newStatus:
                   type: string
                   enum: [active, paused, completed, archived]
+              required: [project, newStatus]
       responses:
         '200':
           description: Project status updated
@@ -132,4 +133,4 @@ paths:
                   type: boolean
       responses:
         '200':
-          description: Intent layer activated
+          description: Intent layer successfully activated
