@@ -1,90 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Brobot18 Control Deck</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brobot Deck</title>
   <style>
     body {
-      background-color: #111;
-      color: #eee;
+      background-color: #000;
+      color: white;
       font-family: Arial, sans-serif;
+      text-align: center;
       padding: 2em;
     }
-    h1, h3 {
+    h1 {
       color: #FF00FF;
+      font-size: 2.5em;
+      margin-bottom: 1em;
     }
-    input, button, textarea {
+    .hub-link {
       display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 1em;
-    }
-    button {
-      background-color: #FF00FF;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    #responseArea {
-      margin-top: 1em;
-      font-weight: bold;
-      color: #0f0;
-    }
-    #logPanel {
-      margin-top: 2em;
-      background: #222;
+      margin: 1em auto;
       padding: 1em;
-      border-radius: 8px;
-      font-family: monospace;
+      width: 80%;
+      max-width: 400px;
+      font-size: 1.2em;
+      background: transparent;
+      color: #00FFFF;
+      border: 2px solid #FF00FF;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+    .hub-link:hover {
+      background-color: #111;
     }
   </style>
 </head>
 <body>
-  <h1>Brobot18 Command Deck</h1>
 
-  <form id="brobotForm">
-    <input type="text" id="commandInput" placeholder="Enter a command..." required />
-    <button type="submit">Send Command</button>
-  </form>
+  <h1>Brobot Deck</h1>
+  <p>Select a Hub:</p>
 
-  <div id="responseArea"></div>
+  <a class="hub-link" href="hub-creative.html">[C] Creative Mode</a>
+  <a class="hub-link" href="hub-home.html">[H] Home Base & Ops</a>
+  <a class="hub-link" href="hub-legal.html">[L] Legal</a>
+  <a class="hub-link" href="hub-personal.html">[P] Personal Wellness</a>
+  <a class="hub-link" href="hub-social.html">[S] Social</a>
+  <a class="hub-link" href="hub-temporal.html">[T] Temporal Ops</a>
+  <a class="hub-link" href="hub-work.html">[W] Work & Professional</a>
 
-  <section>
-    <h3>Command History</h3>
-    <button onclick="loadHistory()">Refresh History</button>
-    <div id="logPanel"></div>
-  </section>
-
-  <script>
-    document.getElementById('brobotForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const input = document.getElementById('commandInput').value;
-
-      const res = await fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: input })
-      });
-
-      const data = await res.json();
-      document.getElementById('responseArea').innerText = data.reply;
-      loadHistory();
-    });
-
-    async function loadHistory() {
-      const res = await fetch('/logs');
-      const logs = await res.json();
-      const panel = document.getElementById('logPanel');
-      panel.innerHTML = logs.map(log =>
-        `<div><strong>[${log.timestamp}]</strong><br/>Command: ${log.command}<br/>Response: ${log.response}</div><hr/>`
-      ).join('');
-    }
-
-    window.onload = loadHistory;
-  </script>
 </body>
 </html>
