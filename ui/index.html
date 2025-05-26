@@ -4,36 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Brobot Deck</title>
-.input-section {
-  margin-top: 3em;
-}
-
-.input-section input {
-  width: 80%;
-  padding: 1em;
-  border-radius: 10px;
-  border: 2px solid #00FFFF;
-  background-color: #111;
-  color: #00FFFF;
-  font-size: 1em;
-}
-
-.input-section button {
-  margin-top: 1em;
-  padding: 0.7em 1.5em;
-  border: 2px solid #FF00FF;
-  background-color: transparent;
-  color: #FF00FF;
-  border-radius: 10px;
-  font-size: 1em;
-  cursor: pointer;
-}
-
-.response {
-  margin-top: 2em;
-  color: #888;
-  font-style: italic;
-}
   <style>
     body {
       background-color: #000;
@@ -60,9 +30,9 @@
       padding: 1em 2em;
       width: 80%;
       font-size: 1.2em;
-      color: #00FFFF; /* Cyan text */
+      color: #00FFFF;
       background-color: transparent;
-      border: 2px solid #FF00FF; /* Magenta border */
+      border: 2px solid #FF00FF;
       border-radius: 12px;
       text-decoration: none;
       transition: all 0.2s ease-in-out;
@@ -74,18 +44,35 @@
       border-color: #00FFFF;
     }
 
-    .interaction {
+    .input-section {
       margin-top: 3em;
     }
 
-    .interaction input {
-      padding: 0.8em;
-      width: 70%;
-      font-size: 1em;
-      border: 2px solid #00FFFF;
-      background: #111;
-      color: #00FFFF;
+    .input-section input {
+      width: 80%;
+      padding: 1em;
       border-radius: 10px;
+      border: 2px solid #00FFFF;
+      background-color: #111;
+      color: #00FFFF;
+      font-size: 1em;
+    }
+
+    .input-section button {
+      margin-top: 1em;
+      padding: 0.7em 1.5em;
+      border: 2px solid #FF00FF;
+      background-color: transparent;
+      color: #FF00FF;
+      border-radius: 10px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    .response {
+      margin-top: 2em;
+      color: #888;
+      font-style: italic;
     }
   </style>
 </head>
@@ -104,30 +91,35 @@
     <a class="button" href="hub-social.html">[S]ocial</a>
     <a class="button" href="hub-temporal.html">[T]emporal</a>
     <a class="button" href="hub-work.html">[W]ork</a>
-  <section class="input-section">
-  <input type="text" id="commandInput" placeholder="Type a command..." />
-  <button onclick="handleCommand()">Submit</button>
-  <p id="responseArea" class="response"></p>
-</section>
+
+    <section class="input-section">
+      <form id="brobotForm">
+        <input type="text" id="commandInput" placeholder="Type a command..." />
+        <button type="submit">Submit</button>
+      </form>
+      <p id="responseArea" class="response"></p>
+    </section>
   </main>
 
-  <div class="interaction">
-    <p class="sub">Talk to Brobot</p>
-    <input type="text" placeholder="Type a command..." />
-  </div>
-<script>
-  function handleCommand() {
-    const input = document.getElementById('commandInput').value;
-    const response = document.getElementById('responseArea');
+  <script>
+    document.getElementById("brobotForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const input = document.getElementById("commandInput").value.trim();
+      const response = document.getElementById("responseArea");
 
-    if (!input.trim()) {
-      response.textContent = "Please type something first.";
-    } else {
-      response.textContent = `Command received: "${input}". Response coming soon...`;
-      // Later: replace this with real backend call
-    }
-  }
-</script>
+      if (!input) {
+        response.textContent = "Please type something first.";
+      } else if (input.toLowerCase() === "hi" || input.toLowerCase() === "hello") {
+        response.textContent = "Hey! What’s on your mind?";
+      } else if (input.toLowerCase().includes("reset")) {
+        response.textContent = "Got it — resetting...";
+      } else {
+        response.textContent = `Command received: "${input}". Response coming soon...`;
+      }
+
+      document.getElementById("commandInput").value = "";
+    });
+  </script>
 
 </body>
 </html>
