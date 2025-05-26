@@ -3,131 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Brobot Hub Deck</title>
+  <title>Brobot18 Control Deck</title>
   <style>
-    body { background-color: #000; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 2em; text-align: center; }
-    h1 { color: #FF00FF; margin-bottom: 0.5em; }
-    .hub-section { margin: 2em auto; max-width: 500px; background: #111; padding: 1.5em; border: 2px solid #FF00FF; border-radius: 12px; }
-    input, select, textarea, button {
-      display: block; width: 100%; margin: 1em 0; padding: 0.8em;
-      border-radius: 8px; font-size: 1em; border: none;
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      padding: 2em;
     }
-    button { background: #FF00FF; color: #000; font-weight: bold; cursor: pointer; }
-    #status { color: #0f0; font-size: 0.95em; margin-top: 1em; }
+    h1, h3 {
+      color: #FF00FF;
+    }
+    input, button, textarea {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1em;
+    }
+    button {
+      background-color: #FF00FF;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #responseArea {
+      margin-top: 1em;
+      font-weight: bold;
+      color: #0f0;
+    }
+    #logPanel {
+      margin-top: 2em;
+      background: #222;
+      padding: 1em;
+      border-radius: 8px;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
+  <h1>Brobot18 Command Deck</h1>
 
-  <h1 id="hubHeader">[Hub] Loading...</h1>
+  <form id="brobotForm">
+    <input type="text" id="commandInput" placeholder="Enter a command..." required />
+    <button type="submit">Send Command</button>
+  </form>
 
-  <div class="hub-section">
-    <h3>Create a Task</h3>
-    <input id="taskTitle" placeholder="Task title" />
-    <input id="taskNotes" placeholder="Notes (optional)" />
-    <select id="taskPriority">
-      <option value="low">Low</option>
-      <option value="medium" selected>Medium</option>
-      <option value="high">High</option>
-    </select>
-    <input type="date" id="taskDue" />
-    <button onclick="submitTask()">Submit Task</button>
-  </div>
+  <div id="responseArea"></div>
 
-  <div class="hub-section">
-    <h3>Move Task</h3>
-    <input id="moveTitle" placeholder="Task name to move" />
-    <select id="moveStatus">
-      <option value="activeProjects">Active</option>
-      <option value="pausedProjects">Paused</option>
-      <option value="completedProjects">Completed</option>
-    </select>
-    <button onclick="moveTask()">Move Task</button>
-  </div>
-
-  <div class="hub-section">
-    <h3>Log an Entry</h3>
-    <textarea id="logContent" rows="4" placeholder="Write your log or update..."></textarea>
-    <select id="logType">
-      <option value="journal">Journal</option>
-      <option value="update">Update</option>
-      <option value="win">Win</option>
-    </select>
-    <button onclick="submitLog()">Log Entry</button>
-  </div>
-
-  <div id="status"></div>
+  <section>
+    <h3>Command History</h3>
+    <button onclick="loadHistory()">Refresh History</button>
+    <div id="logPanel"></div>
+  </section>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const hubID = params.get('hub')?.toUpperCase() || 'T';
+    document.getElementById('brobotForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const input = document.getElementById('commandInput').value;
 
-    document.getElementById('hubHeader').innerText = `[${hubID}] Brobot Deck`;
+      const res = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: input })
+      });
 
-    const setStatus = msg => {
-      const s = document.getElementById('status');
-      s.textContent = msg;
-      setTimeout(() => s.textContent = '', 5000);
-    };
+      const data = await res.json();
+      document.getElementById('responseArea').innerText = data.reply;
+      loadHistory();
+    });
 
-    async function submitTask() {
-      const payload = {
-        title: document.getElementById('taskTitle').value,
-        notes: document.getElementById('taskNotes').value,
-        priority: document.getElementById('taskPriority').value,
-        dueDate: document.getElementById('taskDue').value || null
-      };
-
-      try {
-        const res = await fetch(`/hub/${hubID}/task`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        setStatus(data.message || 'Task created.');
-      } catch (err) {
-        setStatus('Error submitting task.');
-      }
+    async function loadHistory() {
+      const res = await fetch('/logs');
+      const logs = await res.json();
+      const panel = document.getElementById('logPanel');
+      panel.innerHTML = logs.map(log =>
+        `<div><strong>[${log.timestamp}]</strong><br/>Command: ${log.command}<br/>Response: ${log.response}</div><hr/>`
+      ).join('');
     }
 
-    async function moveTask() {
-      const payload = {
-        title: document.getElementById('moveTitle').value,
-        newStatus: document.getElementById('moveStatus').value
-      };
-
-      try {
-        const res = await fetch(`/hub/${hubID}/task/move`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        setStatus(data.message || 'Task moved.');
-      } catch (err) {
-        setStatus('Error moving task.');
-      }
-    }
-
-    async function submitLog() {
-      const payload = {
-        type: document.getElementById('logType').value,
-        content: document.getElementById('logContent').value
-      };
-
-      try {
-        const res = await fetch(`/hub/${hubID}/log`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        setStatus(data.message || 'Log saved.');
-      } catch (err) {
-        setStatus('Error submitting log.');
-      }
-    }
+    window.onload = loadHistory;
   </script>
-
 </body>
 </html>
