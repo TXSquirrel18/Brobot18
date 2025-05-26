@@ -1,140 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Brobot Deck</title>
+  <meta charset="UTF-8">
+  <title>Brobot Hub Control</title>
   <style>
-    body {
-      background-color: #000;
-      color: white;
-      font-family: 'Arial', sans-serif;
-      text-align: center;
-      margin: 0;
-    }
-
-    h1 {
-      font-size: 2.2em;
-      margin-top: 1.5em;
-    }
-
-    .sub {
-      font-size: 1.1em;
-      color: #888;
-      margin-bottom: 1em;
-    }
-
-    .button {
-      display: block;
-      margin: 1em auto;
-      padding: 1em 2em;
-      width: 80%;
-      font-size: 1.2em;
-      color: #00FFFF;
-      background-color: transparent;
-      border: 2px solid #FF00FF;
-      border-radius: 12px;
-      text-decoration: none;
-      transition: all 0.2s ease-in-out;
-    }
-
-    .button:hover {
-      background-color: #111;
-      color: #FF00FF;
-      border-color: #00FFFF;
-    }
-
-    .input-section {
-      margin-top: 3em;
-    }
-
-    .input-section input {
-      width: 80%;
-      padding: 1em;
-      border-radius: 10px;
-      border: 2px solid #00FFFF;
-      background-color: #111;
-      color: #00FFFF;
-      font-size: 1em;
-    }
-
-    .input-section button {
-      margin-top: 1em;
-      padding: 0.7em 1.5em;
-      border: 2px solid #FF00FF;
-      background-color: transparent;
-      color: #FF00FF;
-      border-radius: 10px;
-      font-size: 1em;
-      cursor: pointer;
-    }
-
-    .response {
-      margin-top: 2em;
-      color: #888;
-      font-style: italic;
-    }
+    body { font-family: sans-serif; padding: 20px; background: #111; color: #eee; }
+    input, textarea, select, button { margin: 6px 0; padding: 6px; width: 100%; }
+    section { margin-bottom: 24px; border-bottom: 1px solid #333; padding-bottom: 16px; }
+    h1, h3 { color: #f0c674; }
+    #messageBox { margin-top: 16px; color: #98ec9b; font-weight: bold; }
   </style>
 </head>
 <body>
+  <h1 id="hubName">Loading...</h1>
 
-  <header>
-    <h1>Brobot Deck</h1>
-    <p class="sub">Select a Hub</p>
-  </header>
+  <section>
+    <h3>Create New Task</h3>
+    <input id="taskTitle" placeholder="Title" />
+    <input id="taskNotes" placeholder="Notes" />
+    <select id="taskPriority">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+    <input id="taskDue" type="date" />
+    <button onclick="submitTask()">Submit Task</button>
+  </section>
 
-  <main>
-    <a class="button" href="hub-creative.html">[C]reative</a>
-    <a class="button" href="hub-home.html">[H]ome</a>
-    <a class="button" href="hub-legal.html">[L]egal</a>
-    <a class="button" href="hub-personal.html">[P]ersonal Wellness</a>
-    <a class="button" href="hub-social.html">[S]ocial</a>
-    <a class="button" href="hub-temporal.html">[T]emporal</a>
-    <a class="button" href="hub-work.html">[W]ork</a>
+  <section>
+    <h3>Move Task</h3>
+    <input id="moveTitle" placeholder="Task Title" />
+    <select id="newStatus">
+      <option value="activeProjects">Active</option>
+      <option value="pausedProjects">Paused</option>
+      <option value="completedProjects">Completed</option>
+    </select>
+    <button onclick="moveTask()">Move</button>
+  </section>
 
-    <section class="input-section">
-      <form id="brobotForm">
-        <input type="text" id="commandInput" placeholder="Type a command..." />
-        <button type="submit">Submit</button>
-      </form>
-      <p id="responseArea" class="response"></p>
-    </section>
-  </main>
+  <section>
+    <h3>Log Entry</h3>
+    <textarea id="logText" placeholder="What's the update?"></textarea>
+    <select id="logType">
+      <option value="journal">Journal</option>
+      <option value="win">Win</option>
+      <option value="update">Update</option>
+    </select>
+    <button onclick="submitLog()">Log It</button>
+  </section>
+
+  <div id="messageBox"></div>
 
   <script>
-    document.getElementById("brobotForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      handleCommand();
-    });
+    const params = new URLSearchParams(window.location.search);
+    const hubID = params.get('hub')?.toUpperCase() || 'T';
 
-    async function handleCommand() {
-      const input = document.getElementById('commandInput').value;
-      const response = document.getElementById('responseArea');
-
-      if (!input.trim()) {
-        response.textContent = "Please type something.";
-        return;
-      }
-
-      response.textContent = "Processing...";
-
-      try {
-        const res = await fetch('https://brobot18.onrender.com/api/command', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ command: input })
-        });
-
-        const data = await res.json();
-        response.textContent = data.reply || "No response.";
-      } catch (error) {
-        console.error(error);
-        response.textContent = "Error reaching Brobot.";
-      }
+    function showMessage(msg) {
+      const box = document.getElementById('messageBox');
+      box.innerText = msg;
+      setTimeout(() => box.innerText = '', 4000);
     }
-  </script>
 
+    async function submitTask() {
+      const payload = {
+        title: document.getElementById('taskTitle').value,
+        notes: document.getElementById('taskNotes').value,
+        priority: document.getElementById('taskPriority').value,
+        dueDate: document.getElementById('taskDue').value || null
+      };
+      const res = await fetch(`/hub/${hubID}/task`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showMessage(data.message || 'Task submitted.');
+    }
+
+    async function moveTask() {
+      const payload = {
+        title: document.getElementById('moveTitle').value,
+        newStatus: document.getElementById('newStatus').value
+      };
+      const res = await fetch(`/hub/${hubID}/task/move`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showMessage(data.message || 'Task moved.');
+    }
+
+    async function submitLog() {
+      const payload = {
+        type: document.getElementById('logType').value,
+        content: document.getElementById('logText').value
+      };
+      const res = await fetch(`/hub/${hubID}/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showMessage(data.message || 'Log saved.');
+    }
+
+    fetch(`/hub/${hubID}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('hubName').innerText = `[${hubID}] ${data.hub}`;
+      })
+      .catch(() => {
+        document.getElementById('hubName').innerText = `[${hubID}] Hub not found`;
+        showMessage('Error loading hub');
+      });
+  </script>
 </body>
 </html>
