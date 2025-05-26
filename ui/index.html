@@ -115,6 +115,19 @@
     <p class="sub">Talk to Brobot</p>
     <input type="text" placeholder="Type a command..." />
   </div>
+<script>
+  function handleCommand() {
+    const input = document.getElementById('commandInput').value;
+    const response = document.getElementById('responseArea');
+
+    if (!input.trim()) {
+      response.textContent = "Please type something first.";
+    } else {
+      response.textContent = `Command received: "${input}". Response coming soon...`;
+      // Later: replace this with real backend call
+    }
+  }
+</script>
 
 </body>
 </html>
