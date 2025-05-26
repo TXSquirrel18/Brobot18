@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 const DATA_FILE = './data.json';
+const TEMPLATE_FILE = './data.template.json';
 
 const hubNames = {
   C: 'Creative',
@@ -29,17 +30,19 @@ const saveData = async (data) => {
   await fs.writeJson(DATA_FILE, data, { spaces: 2 });
 };
 
-// Initialize file if empty
-(async () => {
-  const existing = await loadData();
-  if (Object.keys(existing).length === 0) {
-    const init = {};
-    for (const id of Object.keys(hubNames)) {
-      init[id] = { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] };
-    }
-    await saveData(init);
+const ensureDataFileExists = async () => {
+  const exists = await fs.pathExists(DATA_FILE);
+  if (!exists) {
+    const template = await fs.readJson(TEMPLATE_FILE);
+    await saveData(template);
+    console.log('Created data.json from template');
   }
-})();
+};
+
+app.use(async (req, res, next) => {
+  await ensureDataFileExists();
+  next();
+});
 
 // GET hub status
 app.get('/hub/:id', async (req, res) => {
@@ -55,7 +58,7 @@ app.get('/hub/:id', async (req, res) => {
   });
 });
 
-// POST a log entry
+// POST log entry
 app.post('/hub/:id/log', async (req, res) => {
   const id = req.params.id.toUpperCase();
   const { type, content } = req.body;
@@ -64,7 +67,12 @@ app.post('/hub/:id/log', async (req, res) => {
   if (!data[id]) return res.status(404).send('Hub not found');
   if (!['journal', 'win', 'update'].includes(type)) return res.status(400).send('Invalid log type');
 
-  const entry = { timestamp: new Date().toISOString(), type, content };
+  const entry = {
+    timestamp: new Date().toISOString(),
+    type,
+    content
+  };
+
   data[id].logs.push(entry);
   await saveData(data);
 
@@ -80,7 +88,7 @@ app.get('/hub/:id/logs', async (req, res) => {
   res.json(data[id].logs);
 });
 
-// POST a new project/task
+// POST new task/project
 app.post('/hub/:id/task', async (req, res) => {
   const id = req.params.id.toUpperCase();
   const { title, notes = '', priority = 'medium', dueDate = null } = req.body;
@@ -102,7 +110,7 @@ app.post('/hub/:id/task', async (req, res) => {
   res.json({ message: 'Task added to active projects', task: newTask });
 });
 
-// PUT to move a project to a new status
+// PUT to move task
 app.put('/hub/:id/task/move', async (req, res) => {
   const id = req.params.id.toUpperCase();
   const { title, newStatus } = req.body;
@@ -132,5 +140,5 @@ app.put('/hub/:id/task/move', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Brobot persistent backend running on port ${PORT}`);
+  console.log(`Brobot backend running on port ${PORT}`);
 });
