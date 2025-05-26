@@ -1,65 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Brobot Hub Control</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Brobot Hub Deck</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #111; color: #eee; }
-    input, textarea, select, button { margin: 6px 0; padding: 6px; width: 100%; }
-    section { margin-bottom: 24px; border-bottom: 1px solid #333; padding-bottom: 16px; }
-    h1, h3 { color: #f0c674; }
-    #messageBox { margin-top: 16px; color: #98ec9b; font-weight: bold; }
+    body { background-color: #000; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 2em; text-align: center; }
+    h1 { color: #FF00FF; margin-bottom: 0.5em; }
+    .hub-section { margin: 2em auto; max-width: 500px; background: #111; padding: 1.5em; border: 2px solid #FF00FF; border-radius: 12px; }
+    input, select, textarea, button {
+      display: block; width: 100%; margin: 1em 0; padding: 0.8em;
+      border-radius: 8px; font-size: 1em; border: none;
+    }
+    button { background: #FF00FF; color: #000; font-weight: bold; cursor: pointer; }
+    #status { color: #0f0; font-size: 0.95em; margin-top: 1em; }
   </style>
 </head>
 <body>
-  <h1 id="hubName">Loading...</h1>
 
-  <section>
-    <h3>Create New Task</h3>
-    <input id="taskTitle" placeholder="Title" />
-    <input id="taskNotes" placeholder="Notes" />
+  <h1 id="hubHeader">[Hub] Loading...</h1>
+
+  <div class="hub-section">
+    <h3>Create a Task</h3>
+    <input id="taskTitle" placeholder="Task title" />
+    <input id="taskNotes" placeholder="Notes (optional)" />
     <select id="taskPriority">
       <option value="low">Low</option>
       <option value="medium" selected>Medium</option>
       <option value="high">High</option>
     </select>
-    <input id="taskDue" type="date" />
+    <input type="date" id="taskDue" />
     <button onclick="submitTask()">Submit Task</button>
-  </section>
+  </div>
 
-  <section>
+  <div class="hub-section">
     <h3>Move Task</h3>
-    <input id="moveTitle" placeholder="Task Title" />
-    <select id="newStatus">
+    <input id="moveTitle" placeholder="Task name to move" />
+    <select id="moveStatus">
       <option value="activeProjects">Active</option>
       <option value="pausedProjects">Paused</option>
       <option value="completedProjects">Completed</option>
     </select>
-    <button onclick="moveTask()">Move</button>
-  </section>
+    <button onclick="moveTask()">Move Task</button>
+  </div>
 
-  <section>
-    <h3>Log Entry</h3>
-    <textarea id="logText" placeholder="What's the update?"></textarea>
+  <div class="hub-section">
+    <h3>Log an Entry</h3>
+    <textarea id="logContent" rows="4" placeholder="Write your log or update..."></textarea>
     <select id="logType">
       <option value="journal">Journal</option>
-      <option value="win">Win</option>
       <option value="update">Update</option>
+      <option value="win">Win</option>
     </select>
-    <button onclick="submitLog()">Log It</button>
-  </section>
+    <button onclick="submitLog()">Log Entry</button>
+  </div>
 
-  <div id="messageBox"></div>
+  <div id="status"></div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const hubID = params.get('hub')?.toUpperCase() || 'T';
 
-    function showMessage(msg) {
-      const box = document.getElementById('messageBox');
-      box.innerText = msg;
-      setTimeout(() => box.innerText = '', 4000);
-    }
+    document.getElementById('hubHeader').innerText = `[${hubID}] Brobot Deck`;
+
+    const setStatus = msg => {
+      const s = document.getElementById('status');
+      s.textContent = msg;
+      setTimeout(() => s.textContent = '', 5000);
+    };
 
     async function submitTask() {
       const payload = {
@@ -68,52 +76,58 @@
         priority: document.getElementById('taskPriority').value,
         dueDate: document.getElementById('taskDue').value || null
       };
-      const res = await fetch(`/hub/${hubID}/task`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      showMessage(data.message || 'Task submitted.');
+
+      try {
+        const res = await fetch(`/hub/${hubID}/task`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        setStatus(data.message || 'Task created.');
+      } catch (err) {
+        setStatus('Error submitting task.');
+      }
     }
 
     async function moveTask() {
       const payload = {
         title: document.getElementById('moveTitle').value,
-        newStatus: document.getElementById('newStatus').value
+        newStatus: document.getElementById('moveStatus').value
       };
-      const res = await fetch(`/hub/${hubID}/task/move`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      showMessage(data.message || 'Task moved.');
+
+      try {
+        const res = await fetch(`/hub/${hubID}/task/move`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        setStatus(data.message || 'Task moved.');
+      } catch (err) {
+        setStatus('Error moving task.');
+      }
     }
 
     async function submitLog() {
       const payload = {
         type: document.getElementById('logType').value,
-        content: document.getElementById('logText').value
+        content: document.getElementById('logContent').value
       };
-      const res = await fetch(`/hub/${hubID}/log`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      showMessage(data.message || 'Log saved.');
-    }
 
-    fetch(`/hub/${hubID}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('hubName').innerText = `[${hubID}] ${data.hub}`;
-      })
-      .catch(() => {
-        document.getElementById('hubName').innerText = `[${hubID}] Hub not found`;
-        showMessage('Error loading hub');
-      });
+      try {
+        const res = await fetch(`/hub/${hubID}/log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        setStatus(data.message || 'Log saved.');
+      } catch (err) {
+        setStatus('Error submitting log.');
+      }
+    }
   </script>
+
 </body>
 </html>
