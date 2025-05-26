@@ -1,10 +1,11 @@
-// index.js
-
 const express = require('express');
+const fs = require('fs-extra');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+const DATA_FILE = './data.json';
 
 const hubNames = {
   C: 'Creative',
@@ -16,54 +17,120 @@ const hubNames = {
   W: 'Work & Professional'
 };
 
-const hubs = {
-  C: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
-  H: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
-  L: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
-  P: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
-  S: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
-  T: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
-  W: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] }
+const loadData = async () => {
+  try {
+    return await fs.readJson(DATA_FILE);
+  } catch {
+    return {};
+  }
 };
 
+const saveData = async (data) => {
+  await fs.writeJson(DATA_FILE, data, { spaces: 2 });
+};
+
+// Initialize file if empty
+(async () => {
+  const existing = await loadData();
+  if (Object.keys(existing).length === 0) {
+    const init = {};
+    for (const id of Object.keys(hubNames)) {
+      init[id] = { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] };
+    }
+    await saveData(init);
+  }
+})();
+
 // GET hub status
-app.get('/hub/:id', (req, res) => {
+app.get('/hub/:id', async (req, res) => {
   const id = req.params.id.toUpperCase();
-  if (!hubs[id]) return res.status(404).send('Hub not found');
+  const data = await loadData();
+  if (!data[id]) return res.status(404).send('Hub not found');
 
   res.json({
     hub: hubNames[id],
-    activeProjects: hubs[id].activeProjects,
-    pausedProjects: hubs[id].pausedProjects,
-    completedProjects: hubs[id].completedProjects
+    activeProjects: data[id].activeProjects,
+    pausedProjects: data[id].pausedProjects,
+    completedProjects: data[id].completedProjects
   });
 });
 
-// POST log entry
-app.post('/hub/:id/log', (req, res) => {
+// POST a log entry
+app.post('/hub/:id/log', async (req, res) => {
   const id = req.params.id.toUpperCase();
   const { type, content } = req.body;
+  const data = await loadData();
 
-  if (!hubs[id]) return res.status(404).send('Hub not found');
+  if (!data[id]) return res.status(404).send('Hub not found');
   if (!['journal', 'win', 'update'].includes(type)) return res.status(400).send('Invalid log type');
 
-  const entry = {
-    timestamp: new Date().toISOString(),
-    type,
-    content
-  };
+  const entry = { timestamp: new Date().toISOString(), type, content };
+  data[id].logs.push(entry);
+  await saveData(data);
 
-  hubs[id].logs.push(entry);
   res.json({ message: 'Entry logged', entry });
 });
 
-// Optional: retrieve all logs for a hub
-app.get('/hub/:id/logs', (req, res) => {
+// GET all logs for a hub
+app.get('/hub/:id/logs', async (req, res) => {
   const id = req.params.id.toUpperCase();
-  if (!hubs[id]) return res.status(404).send('Hub not found');
-  res.json(hubs[id].logs);
+  const data = await loadData();
+  if (!data[id]) return res.status(404).send('Hub not found');
+
+  res.json(data[id].logs);
+});
+
+// POST a new project/task
+app.post('/hub/:id/task', async (req, res) => {
+  const id = req.params.id.toUpperCase();
+  const { title, notes = '', priority = 'medium', dueDate = null } = req.body;
+  const data = await loadData();
+
+  if (!data[id]) return res.status(404).send('Hub not found');
+
+  const newTask = {
+    title,
+    notes,
+    priority,
+    dueDate,
+    createdAt: new Date().toISOString()
+  };
+
+  data[id].activeProjects.push(newTask);
+  await saveData(data);
+
+  res.json({ message: 'Task added to active projects', task: newTask });
+});
+
+// PUT to move a project to a new status
+app.put('/hub/:id/task/move', async (req, res) => {
+  const id = req.params.id.toUpperCase();
+  const { title, newStatus } = req.body;
+  const data = await loadData();
+
+  if (!data[id]) return res.status(404).send('Hub not found');
+  if (!['activeProjects', 'pausedProjects', 'completedProjects'].includes(newStatus)) {
+    return res.status(400).send('Invalid status');
+  }
+
+  const allStatuses = ['activeProjects', 'pausedProjects', 'completedProjects'];
+  let movedTask = null;
+
+  for (const status of allStatuses) {
+    const idx = data[id][status].findIndex(t => t.title === title);
+    if (idx !== -1) {
+      movedTask = data[id][status].splice(idx, 1)[0];
+      break;
+    }
+  }
+
+  if (!movedTask) return res.status(404).send('Task not found');
+  data[id][newStatus].push(movedTask);
+  await saveData(data);
+
+  res.json({ message: `Task moved to ${newStatus}`, task: movedTask });
 });
 
 app.listen(PORT, () => {
-  console.log(`Brobot backend running on port ${PORT}`);
+  console.log(`Brobot persistent backend running on port ${PORT}`);
 });
