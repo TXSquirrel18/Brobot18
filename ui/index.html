@@ -101,25 +101,35 @@
     </section>
   </main>
 
-  <script>
-    document.getElementById("brobotForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const input = document.getElementById("commandInput").value.trim();
-      const response = document.getElementById("responseArea");
+<script>
+  async function handleCommand() {
+    const input = document.getElementById('commandInput').value;
+    const response = document.getElementById('responseArea');
 
-      if (!input) {
-        response.textContent = "Please type something first.";
-      } else if (input.toLowerCase() === "hi" || input.toLowerCase() === "hello") {
-        response.textContent = "Hey! What’s on your mind?";
-      } else if (input.toLowerCase().includes("reset")) {
-        response.textContent = "Got it — resetting...";
-      } else {
-        response.textContent = `Command received: "${input}". Response coming soon...`;
-      }
+    if (!input.trim()) {
+      response.textContent = "Please type something first.";
+      return;
+    }
 
-      document.getElementById("commandInput").value = "";
-    });
-  </script>
+    response.textContent = "Processing...";
+
+    try {
+      const res = await fetch('https://brobot18.onrender.com/api/command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: input })
+      });
+
+      const data = await res.json();
+      response.textContent = data.reply || "No response received.";
+    } catch (error) {
+      console.error(error);
+      response.textContent = "Error reaching Brobot backend.";
+    }
+  }
+</script>
 
 </body>
 </html>
