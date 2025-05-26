@@ -1,44 +1,69 @@
-const express = require('express');
-const cors = require('cors');
+// index.js
 
+const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(express.json());
 
-// POST route for commands
-app.post('/api/command', (req, res) => {
-  const command = req.body.command?.toLowerCase();
-  let reply;
+const hubNames = {
+  C: 'Creative',
+  H: 'Home Base & Operations',
+  L: 'Legal',
+  P: 'Personal Wellness',
+  S: 'Social',
+  T: 'Temporal Ops',
+  W: 'Work & Professional'
+};
 
-  if (!command) {
-    return res.status(400).json({ reply: "No command received." });
-  }
+const hubs = {
+  C: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
+  H: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
+  L: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
+  P: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
+  S: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
+  T: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] },
+  W: { activeProjects: [], pausedProjects: [], completedProjects: [], logs: [] }
+};
 
-  if (command.includes('hi') || command.includes('hello')) {
-    reply = "Hey there! I'm Brobot. What can I help you with?";
-  } else if (command.includes('time')) {
-    reply = `The current time is ${new Date().toLocaleTimeString()}`;
-  } else if (command.includes('date')) {
-    reply = `Today's date is ${new Date().toLocaleDateString()}`;
-  } else if (command.includes('who are you')) {
-    reply = "I'm Brobot — your command deck assistant.";
-  } else if (command.includes('help')) {
-    reply = "Try commands like 'time', 'date', 'who are you'.";
-  } else {
-    reply = `You said: "${command}". I'm still learning!`;
-  }
+// GET hub status
+app.get('/hub/:id', (req, res) => {
+  const id = req.params.id.toUpperCase();
+  if (!hubs[id]) return res.status(404).send('Hub not found');
 
-  res.json({ reply });
+  res.json({
+    hub: hubNames[id],
+    activeProjects: hubs[id].activeProjects,
+    pausedProjects: hubs[id].pausedProjects,
+    completedProjects: hubs[id].completedProjects
+  });
 });
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('Brobot API is running!');
+// POST log entry
+app.post('/hub/:id/log', (req, res) => {
+  const id = req.params.id.toUpperCase();
+  const { type, content } = req.body;
+
+  if (!hubs[id]) return res.status(404).send('Hub not found');
+  if (!['journal', 'win', 'update'].includes(type)) return res.status(400).send('Invalid log type');
+
+  const entry = {
+    timestamp: new Date().toISOString(),
+    type,
+    content
+  };
+
+  hubs[id].logs.push(entry);
+  res.json({ message: 'Entry logged', entry });
 });
 
-// Start server
+// Optional: retrieve all logs for a hub
+app.get('/hub/:id/logs', (req, res) => {
+  const id = req.params.id.toUpperCase();
+  if (!hubs[id]) return res.status(404).send('Hub not found');
+  res.json(hubs[id].logs);
+});
+
 app.listen(PORT, () => {
-  console.log(`Brobot backend listening on port ${PORT}`);
+  console.log(`Brobot backend running on port ${PORT}`);
 });
