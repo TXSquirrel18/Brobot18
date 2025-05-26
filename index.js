@@ -1,4 +1,4 @@
-// index.js (root-level)
+
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 
 const dataPath = path.join(__dirname, 'data.json');
 const templatePath = path.join(__dirname, 'data.template.json');
+const logFile = path.join(__dirname, 'logs.json');
 
 // Load or create initial data
 function initializeData() {
@@ -17,18 +18,45 @@ function initializeData() {
   }
 }
 
+function ensureLogFile() {
+  if (!fs.existsSync(logFile)) {
+    fs.writeFileSync(logFile, JSON.stringify([]));
+    console.log('Initialized logs.json');
+  }
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'ui')));
 
-// Endpoint
+// Main Command POST Route
 app.post('/', (req, res) => {
-  const command = req.body.command;
-  res.json({ reply: `Command received: ${command}` });
+  const { command } = req.body;
+  const reply = `Command received: ${command}`;
+  res.json({ reply });
+
+  // Log the command + reply
+  const timestamp = new Date().toISOString();
+  const entry = { timestamp, command, response: reply };
+
+  let logs = [];
+  if (fs.existsSync(logFile)) {
+    logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+  }
+
+  logs.unshift(entry);
+  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
 });
 
-// Start
+// Logs API
+app.get('/logs', (req, res) => {
+  if (!fs.existsSync(logFile)) return res.json([]);
+  const logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+  res.json(logs);
+});
+
 initializeData();
+ensureLogFile();
 app.listen(port, () => {
   console.log(`Brobot18 server running on port ${port}`);
 });
