@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -79,4 +78,18 @@ app.post('/hub/:id/log', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.get('/hub/:id/logs', (req, res) => {
+  const { id } = req.params;
+  const hubID = id.toUpperCase();
+
+  if (!fs.existsSync(logFile)) {
+    return res.json([]);
+  }
+
+  const allLogs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+  const hubLogs = allLogs.filter(log => log.hub === hubID);
+
+  res.json(hubLogs);
 });
