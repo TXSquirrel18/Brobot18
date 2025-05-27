@@ -18,6 +18,8 @@ const backupDir = path.join(__dirname, 'backups');
 
 // Token validation middleware with obscure internal override
 app.use((req, res, next) => {
+  console.log('Headers:', req.headers); // Debug log
+
   const internalBypass = req.headers['x-bbot-channel'] === 'overclock:shard77';
   const token = req.headers['x-brobot-key'];
 
