@@ -1,62 +1,56 @@
-
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-const dataPath = path.join(__dirname, 'data.json');
-const templatePath = path.join(__dirname, 'data.template.json');
-const logFile = path.join(__dirname, 'logs.json');
+app.use(cors());
+app.use(bodyParser.json());
 
-// Load or create initial data
-function initializeData() {
-  if (!fs.existsSync(dataPath)) {
-    const template = fs.readFileSync(templatePath, 'utf-8');
-    fs.writeFileSync(dataPath, template);
-    console.log('Initialized data.json from template.');
-  }
-}
+const flowTracker = {
+  active: [],
+  paused: [],
+  completed: [],
+  archived: []
+};
 
-function ensureLogFile() {
-  if (!fs.existsSync(logFile)) {
-    fs.writeFileSync(logFile, JSON.stringify([]));
-    console.log('Initialized logs.json');
-  }
-}
+app.get('/', (req, res) => {
+  res.send('Brobot server is running');
+});
 
-// Middleware
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'ui')));
-
-// Main Command POST Route
-app.post('/', (req, res) => {
+app.post('/command', (req, res) => {
   const { command } = req.body;
-  const reply = `Command received: ${command}`;
-  res.json({ reply });
+  console.log("Command received:", command);
+  res.json({ reply: "Command processed: " + command });
+});
 
-  // Log the command + reply
-  const timestamp = new Date().toISOString();
-  const entry = { timestamp, command, response: reply };
-
-  let logs = [];
-  if (fs.existsSync(logFile)) {
-    logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+app.post('/task', (req, res) => {
+  const { title, notes, priority } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Task title required' });
   }
-
-  logs.unshift(entry);
-  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+  flowTracker.active.push({ title, notes, priority });
+  res.json({ status: 'Task added to active', task: { title, notes, priority } });
 });
 
-// Logs API
-app.get('/logs', (req, res) => {
-  if (!fs.existsSync(logFile)) return res.json([]);
-  const logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
-  res.json(logs);
+app.post('/move', (req, res) => {
+  const { title, newStatus } = req.body;
+  let found = false;
+  for (const [status, list] of Object.entries(flowTracker)) {
+    const idx = list.findIndex(task => task.title === title);
+    if (idx !== -1) {
+      const [task] = list.splice(idx, 1);
+      flowTracker[newStatus].push(task);
+      found = true;
+      return res.json({ status: `Task moved to ${newStatus}`, task });
+    }
+  }
+  if (!found) {
+    res.status(404).json({ error: 'Task not found' });
+  }
 });
 
-initializeData();
-ensureLogFile();
-app.listen(port, () => {
-  console.log(`Brobot18 server running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
