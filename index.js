@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const logFile = path.join(__dirname, 'logs.json');
 const memoryFile = path.join(__dirname, 'memory.json');
+const intentFile = path.join(__dirname, 'intentModel.json');
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -23,6 +24,8 @@ function getLatestTaskTitle() {
   return flowTracker.active.length > 0 ? flowTracker.active[0].title : null;
 }
 
+// -- Routes --
+
 app.get('/', (req, res) => {
   res.send('Brobot server is running');
 });
@@ -35,9 +38,7 @@ app.post('/command', (req, res) => {
 
 app.post('/task', (req, res) => {
   const { title, notes, priority } = req.body;
-  if (!title) {
-    return res.status(400).json({ error: 'Task title required' });
-  }
+  if (!title) return res.status(400).json({ error: 'Task title required' });
   flowTracker.active.push({ title, notes, priority });
   res.json({ status: 'Task added to active', task: { title, notes, priority } });
 });
@@ -54,37 +55,25 @@ app.post('/move', (req, res) => {
       return res.json({ status: `Task moved to ${newStatus}`, task });
     }
   }
-  if (!found) {
-    res.status(404).json({ error: 'Task not found' });
-  }
+  if (!found) return res.status(404).json({ error: 'Task not found' });
 });
 
 app.post('/hub/:id/log', (req, res) => {
   const { id } = req.params;
   const { type, content, version, context } = req.body;
-
-  if (!type || !content) {
-    return res.status(400).json({ error: 'Missing type or content in log.' });
-  }
+  if (!type || !content) return res.status(400).json({ error: 'Missing type or content in log.' });
 
   const timestamp = new Date().toISOString();
   const linkedTask = getLatestTaskTitle();
-
   const entry = {
-    hub: id.toUpperCase(),
-    type,
-    content,
-    timestamp,
+    hub: id.toUpperCase(), type, content, timestamp,
     ...(version ? { version } : {}),
     ...(context ? { context } : {}),
     ...(linkedTask ? { linkedTask } : {})
   };
 
   let logs = [];
-  if (fs.existsSync(logFile)) {
-    logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
-  }
-
+  if (fs.existsSync(logFile)) logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
   logs.unshift(entry);
   fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
 
@@ -102,18 +91,14 @@ app.get('/flow-tracker', (req, res) => {
 
 app.post('/memory', (req, res) => {
   const memoryItem = req.body;
-  if (!memoryItem || !memoryItem.content) {
+  if (!memoryItem || !memoryItem.content)
     return res.status(400).json({ error: 'Missing content in memory item.' });
-  }
 
   const timestamp = new Date().toISOString();
   memoryItem.timestamp = timestamp;
 
   let memory = [];
-  if (fs.existsSync(memoryFile)) {
-    memory = JSON.parse(fs.readFileSync(memoryFile, 'utf-8'));
-  }
-
+  if (fs.existsSync(memoryFile)) memory = JSON.parse(fs.readFileSync(memoryFile, 'utf-8'));
   memory.unshift(memoryItem);
   fs.writeFileSync(memoryFile, JSON.stringify(memory, null, 2));
 
@@ -132,27 +117,35 @@ app.get('/memory', (req, res) => {
       typeof val === 'string' && val.toLowerCase().includes(q)
     )
   );
-
   res.json(filtered);
 });
 
-function interpret(command) {
-  const c = command.toLowerCase();
-  if (c.includes("log") || c.includes("journal") || c.includes("note")) return "log";
-  if (c.includes("task") || c.includes("todo") || c.includes("assign")) return "task";
-  if (c.includes("remember") || c.includes("save this")) return "memory";
-  return "unknown";
-}
+// -- Intent Trainer --
+
+app.post('/train-intent', (req, res) => {
+  const { phrase, intent } = req.body;
+  if (!phrase || !intent) return res.status(400).json({ error: 'Missing phrase or intent' });
+
+  let model = [];
+  if (fs.existsSync(intentFile)) model = JSON.parse(fs.readFileSync(intentFile, 'utf-8'));
+  model.unshift({ phrase: phrase.toLowerCase(), intent });
+  fs.writeFileSync(intentFile, JSON.stringify(model, null, 2));
+
+  res.json({ message: 'Intent trained.', entry: { phrase, intent } });
+});
 
 app.post('/smart', (req, res) => {
   const { command } = req.body;
-  const intent = interpret(command);
+  const phrase = command.toLowerCase();
+  let model = [];
+  if (fs.existsSync(intentFile)) model = JSON.parse(fs.readFileSync(intentFile, 'utf-8'));
+
+  const match = model.find(p => phrase.includes(p.phrase));
+  const intent = match ? match.intent : "unknown";
   res.json({ intent, route: intent === "unknown" ? null : `/${intent}` });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// -- Summaries & Indexes --
 
 app.get('/summary/:id', (req, res) => {
   const { id } = req.params;
@@ -162,7 +155,7 @@ app.get('/summary/:id', (req, res) => {
   if (fs.existsSync(logFile)) {
     logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'))
       .filter(log => log.hub === hubID)
-      .slice(0, 5); // limit to 5 most recent
+      .slice(0, 5);
   }
 
   const tasks = {
@@ -179,4 +172,28 @@ app.get('/summary/:id', (req, res) => {
     openTasks: tasks.active.map(t => t.title),
     lastUpdate
   });
+});
+
+app.get('/log-index', (req, res) => {
+  if (!fs.existsSync(logFile)) return res.json([]);
+  const logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+  const index = {};
+
+  logs.forEach(log => {
+    const version = log.version || "Unversioned";
+    const context = log.context || "General";
+    if (!index[version]) index[version] = {};
+    if (!index[version][context]) index[version][context] = [];
+    index[version][context].push({
+      hub: log.hub, type: log.type, content: log.content,
+      timestamp: log.timestamp,
+      ...(log.linkedTask ? { linkedTask: log.linkedTask } : {})
+    });
+  });
+
+  res.json(index);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
