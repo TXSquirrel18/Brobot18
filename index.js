@@ -232,3 +232,29 @@ app.get('/dashboard/:id', (req, res) => {
     lastUpdate
   });
 });
+
+app.get('/analytics', (req, res) => {
+  if (!fs.existsSync(logFile)) return res.json({ error: "No log data found." });
+
+  const logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+  const frequencyByHub = {};
+  const frequencyByType = {};
+  const timeline = [];
+
+  logs.forEach(log => {
+    frequencyByHub[log.hub] = (frequencyByHub[log.hub] || 0) + 1;
+    frequencyByType[log.type] = (frequencyByType[log.type] || 0) + 1;
+    timeline.push(log.timestamp);
+  });
+
+  const streakStart = logs.length ? logs[logs.length - 1].timestamp : null;
+  const lastLogged = logs.length ? logs[0].timestamp : null;
+
+  res.json({
+    totalLogs: logs.length,
+    byHub: frequencyByHub,
+    byType: frequencyByType,
+    streakStart,
+    lastLogged
+  });
+});
