@@ -153,3 +153,30 @@ app.post('/smart', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.get('/summary/:id', (req, res) => {
+  const { id } = req.params;
+  const hubID = id.toUpperCase();
+
+  let logs = [];
+  if (fs.existsSync(logFile)) {
+    logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'))
+      .filter(log => log.hub === hubID)
+      .slice(0, 5); // limit to 5 most recent
+  }
+
+  const tasks = {
+    active: flowTracker.active.filter(t => t.hub === hubID),
+    paused: flowTracker.paused.filter(t => t.hub === hubID),
+    completed: flowTracker.completed.filter(t => t.hub === hubID)
+  };
+
+  const lastUpdate = logs.length > 0 ? logs[0].timestamp : null;
+
+  res.json({
+    hub: hubID,
+    recentLogs: logs,
+    openTasks: tasks.active.map(t => t.title),
+    lastUpdate
+  });
+});
