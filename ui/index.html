@@ -1,53 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brobot Deck</title>
   <style>
     body {
       background-color: #000;
       color: white;
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       text-align: center;
-      padding: 2em;
+      margin: 0;
+      padding: 0;
     }
+
     h1 {
-      color: #FF00FF;
+      color: magenta;
       font-size: 2.5em;
-      margin-bottom: 1em;
+      margin-top: 1em;
     }
-    .hub-link {
+
+    .sub {
+      font-size: 1.2em;
+      color: #ccc;
+      margin-bottom: 2em;
+    }
+
+    .hub-button {
       display: block;
       margin: 1em auto;
-      padding: 1em;
+      padding: 1em 2em;
       width: 80%;
-      max-width: 400px;
-      font-size: 1.2em;
-      background: transparent;
-      color: #00FFFF;
-      border: 2px solid #FF00FF;
+      max-width: 300px;
+      font-size: 1.3em;
+      color: cyan;
+      background-color: transparent;
+      border: 2px solid magenta;
       border-radius: 10px;
       text-decoration: none;
-      transition: 0.3s;
+      transition: all 0.3s ease-in-out;
     }
-    .hub-link:hover {
+
+    .hub-button:hover {
       background-color: #111;
     }
+
   </style>
 </head>
 <body>
-
   <h1>Brobot Deck</h1>
-  <p>Select a Hub:</p>
+  <p class="sub">Select a Hub:</p>
 
-  <a class="hub-link" href="hub-creative.html">[C] Creative Mode</a>
-  <a class="hub-link" href="hub-home.html">[H] Home Base & Ops</a>
-  <a class="hub-link" href="hub-legal.html">[L] Legal</a>
-  <a class="hub-link" href="hub-personal.html">[P] Personal Wellness</a>
-  <a class="hub-link" href="hub-social.html">[S] Social</a>
-  <a class="hub-link" href="hub-temporal.html">[T] Temporal Ops</a>
-  <a class="hub-link" href="hub-work.html">[W] Work & Professional</a>
-
+  <a class="hub-button" href="hub-creative.html">[C] Creative Mode</a>
+  <a class="hub-button" href="hub-home.html">[H] Home Base & Ops</a>
+  <a class="hub-button" href="hub-legal.html">[L] Legal</a>
+  <a class="hub-button" href="hub-personal.html">[P] Personal Wellness</a>
+  <a class="hub-button" href="hub-social.html">[S] Social</a>
+  <a class="hub-button" href="hub-temporal.html">[T] Temporal Ops</a>
+  <a class="hub-button" href="hub-work.html">[W] Work & Professional</a>
 </body>
 </html>
