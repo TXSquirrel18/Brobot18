@@ -125,3 +125,17 @@ app.get('/memory', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+function interpret(command) {
+  const c = command.toLowerCase();
+  if (c.includes("log") || c.includes("journal") || c.includes("note")) return "log";
+  if (c.includes("task") || c.includes("todo") || c.includes("assign")) return "task";
+  if (c.includes("remember") || c.includes("save this")) return "memory";
+  return "unknown";
+}
+
+app.post('/smart', (req, res) => {
+  const { command } = req.body;
+  const intent = interpret(command);
+  res.json({ intent, route: intent === "unknown" ? null : `/${intent}` });
+});
