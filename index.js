@@ -76,20 +76,15 @@ app.post('/hub/:id/log', (req, res) => {
   res.json({ message: `Log received for hub [${id.toUpperCase()}]`, entry });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.get('/flow-tracker', (req, res) => {
+  res.json({
+    active: flowTracker.active.map(t => t.title),
+    paused: flowTracker.paused.map(t => t.title),
+    completed: flowTracker.completed.map(t => t.title),
+    archived: flowTracker.archived.map(t => t.title)
+  });
 });
 
-app.get('/hub/:id/logs', (req, res) => {
-  const { id } = req.params;
-  const hubID = id.toUpperCase();
-
-  if (!fs.existsSync(logFile)) {
-    return res.json([]);
-  }
-
-  const allLogs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
-  const hubLogs = allLogs.filter(log => log.hub === hubID);
-
-  res.json(hubLogs);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
