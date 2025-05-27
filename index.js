@@ -139,3 +139,39 @@ app.post('/smart', (req, res) => {
   const intent = interpret(command);
   res.json({ intent, route: intent === "unknown" ? null : `/${intent}` });
 });
+
+function getLatestTaskTitle() {
+  return flowTracker.active.length > 0 ? flowTracker.active[0].title : null;
+}
+
+app.post('/hub/:id/log', (req, res) => {
+  const { id } = req.params;
+  const { type, content, version, context } = req.body;
+
+  if (!type || !content) {
+    return res.status(400).json({ error: 'Missing type or content in log.' });
+  }
+
+  const timestamp = new Date().toISOString();
+  const linkedTask = getLatestTaskTitle();
+
+  const entry = {
+    hub: id.toUpperCase(),
+    type,
+    content,
+    timestamp,
+    ...(version && { version }),
+    ...(context && { context }),
+    ...(linkedTask && { linkedTask })
+  };
+
+  let logs = [];
+  if (fs.existsSync(logFile)) {
+    logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+  }
+
+  logs.unshift(entry);
+  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+
+  res.json({ message: `Log saved to hub [${id.toUpperCase()}]`, entry });
+});
