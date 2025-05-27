@@ -197,3 +197,38 @@ app.get('/log-index', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.get('/dashboard/:id', (req, res) => {
+  const { id } = req.params;
+  const hubID = id.toUpperCase();
+
+  let logs = [];
+  if (fs.existsSync(logFile)) {
+    logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'))
+      .filter(log => log.hub === hubID)
+      .slice(0, 10);
+  }
+
+  const taskSummary = {
+    active: flowTracker.active.filter(t => t.hub === hubID).length,
+    paused: flowTracker.paused.filter(t => t.hub === hubID).length,
+    completed: flowTracker.completed.filter(t => t.hub === hubID).length
+  };
+
+  const flowCounts = {
+    active: flowTracker.active.length,
+    paused: flowTracker.paused.length,
+    completed: flowTracker.completed.length,
+    archived: flowTracker.archived.length
+  };
+
+  const lastUpdate = logs.length > 0 ? logs[0].timestamp : null;
+
+  res.json({
+    hub: hubID,
+    logs,
+    taskSummary,
+    flowCounts,
+    lastUpdate
+  });
+});
