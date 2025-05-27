@@ -258,3 +258,19 @@ app.get('/analytics', (req, res) => {
     lastLogged
   });
 });
+
+const archiver = require('archiver');
+
+app.get('/backup', (req, res) => {
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  res.attachment('brobot_backup.zip');
+  archive.pipe(res);
+
+  const files = ['logs.json', 'memory.json', 'intentModel.json'];
+  files.forEach(file => {
+    const filePath = path.join(__dirname, file);
+    if (fs.existsSync(filePath)) archive.file(filePath, { name: file });
+  });
+
+  archive.finalize();
+});
