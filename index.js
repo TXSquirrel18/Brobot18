@@ -7,6 +7,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const logFile = path.join(__dirname, 'logs.json');
+const memoryFile = path.join(__dirname, 'memory.json');
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -83,6 +84,42 @@ app.get('/flow-tracker', (req, res) => {
     completed: flowTracker.completed.map(t => t.title),
     archived: flowTracker.archived.map(t => t.title)
   });
+});
+
+app.post('/memory', (req, res) => {
+  const memoryItem = req.body;
+  if (!memoryItem || !memoryItem.content) {
+    return res.status(400).json({ error: 'Missing content in memory item.' });
+  }
+
+  const timestamp = new Date().toISOString();
+  memoryItem.timestamp = timestamp;
+
+  let memory = [];
+  if (fs.existsSync(memoryFile)) {
+    memory = JSON.parse(fs.readFileSync(memoryFile, 'utf-8'));
+  }
+
+  memory.unshift(memoryItem);
+  fs.writeFileSync(memoryFile, JSON.stringify(memory, null, 2));
+
+  res.json({ message: 'Memory saved.', entry: memoryItem });
+});
+
+app.get('/memory', (req, res) => {
+  const q = (req.query.q || '').toLowerCase();
+  if (!fs.existsSync(memoryFile)) return res.json([]);
+
+  const memory = JSON.parse(fs.readFileSync(memoryFile, 'utf-8'));
+  if (!q) return res.json(memory);
+
+  const filtered = memory.filter(entry =>
+    Object.values(entry).some(val =>
+      typeof val === 'string' && val.toLowerCase().includes(q)
+    )
+  );
+
+  res.json(filtered);
 });
 
 app.listen(PORT, () => {
