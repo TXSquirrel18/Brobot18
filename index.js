@@ -3,9 +3,11 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const archiver = require('archiver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 const logFile = path.join(__dirname, 'logs.json');
 const memoryFile = path.join(__dirname, 'memory.json');
 const intentFile = path.join(__dirname, 'intentModel.json');
@@ -24,8 +26,6 @@ function getLatestTaskTitle() {
   return flowTracker.active.length > 0 ? flowTracker.active[0].title : null;
 }
 
-// -- Routes --
-
 app.get('/', (req, res) => {
   res.send('Brobot server is running');
 });
@@ -37,10 +37,10 @@ app.post('/command', (req, res) => {
 });
 
 app.post('/task', (req, res) => {
-  const { title, notes, priority } = req.body;
+  const { title, notes, priority, hub } = req.body;
   if (!title) return res.status(400).json({ error: 'Task title required' });
-  flowTracker.active.push({ title, notes, priority });
-  res.json({ status: 'Task added to active', task: { title, notes, priority } });
+  flowTracker.active.push({ title, notes, priority, hub });
+  res.json({ status: 'Task added to active', task: { title, notes, priority, hub } });
 });
 
 app.post('/move', (req, res) => {
@@ -120,8 +120,6 @@ app.get('/memory', (req, res) => {
   res.json(filtered);
 });
 
-// -- Intent Trainer --
-
 app.post('/train-intent', (req, res) => {
   const { phrase, intent } = req.body;
   if (!phrase || !intent) return res.status(400).json({ error: 'Missing phrase or intent' });
@@ -144,8 +142,6 @@ app.post('/smart', (req, res) => {
   const intent = match ? match.intent : "unknown";
   res.json({ intent, route: intent === "unknown" ? null : `/${intent}` });
 });
-
-// -- Summaries & Indexes --
 
 app.get('/summary/:id', (req, res) => {
   const { id } = req.params;
@@ -192,10 +188,6 @@ app.get('/log-index', (req, res) => {
   });
 
   res.json(index);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
 
 app.get('/dashboard/:id', (req, res) => {
@@ -259,8 +251,6 @@ app.get('/analytics', (req, res) => {
   });
 });
 
-const archiver = require('archiver');
-
 app.get('/backup', (req, res) => {
   try {
     const archive = archiver('zip', { zlib: { level: 9 } });
@@ -281,4 +271,8 @@ app.get('/backup', (req, res) => {
     console.error('Sync route crash:', e);
     res.status(500).send('Internal Server Error');
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
