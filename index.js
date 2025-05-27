@@ -262,15 +262,23 @@ app.get('/analytics', (req, res) => {
 const archiver = require('archiver');
 
 app.get('/backup', (req, res) => {
-  const archive = archiver('zip', { zlib: { level: 9 } });
-  res.attachment('brobot_backup.zip');
-  archive.pipe(res);
+  try {
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    res.attachment('brobot_backup.zip');
+    archive.pipe(res);
 
-  const files = ['logs.json', 'memory.json', 'intentModel.json'];
-  files.forEach(file => {
-    const filePath = path.join(__dirname, file);
-    if (fs.existsSync(filePath)) archive.file(filePath, { name: file });
-  });
+    const files = ['logs.json', 'memory.json', 'intentModel.json'];
+    files.forEach(file => {
+      const filePath = path.join(__dirname, file);
+      if (fs.existsSync(filePath)) archive.file(filePath, { name: file });
+    });
 
-  archive.finalize();
+    archive.finalize().catch(err => {
+      console.error('Archive error:', err);
+      res.status(500).send('Backup error');
+    });
+  } catch (e) {
+    console.error('Sync route crash:', e);
+    res.status(500).send('Internal Server Error');
+  }
 });
