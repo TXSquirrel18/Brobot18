@@ -16,8 +16,9 @@ const memoryFile = path.join(__dirname, 'memory.json');
 const dataFile = path.join(__dirname, 'data.json');
 const backupDir = path.join(__dirname, 'backups');
 
-// Token validation middleware with safer custom header
+// Token validation middleware with debug header logging
 app.use((req, res, next) => {
+  console.log('INCOMING HEADERS:', req.headers); // Debug
   const internalBypass = req.headers['x-ob-override'] === 'shard77_internal';
   const token = req.headers['x-brobot-key'];
 
