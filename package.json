@@ -1,6 +1,7 @@
 {
   "name": "brobot18",
   "version": "1.0.0",
+  "description": "Server for Brobot18 with logging, task tracking, memory search, and scheduled backups.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -17,7 +18,10 @@
     "node-cron": "^3.0.2"
   },
   "devDependencies": {
-    "jest": "^29.6.1",
+    "jest": "^29.7.0",
     "supertest": "^6.3.3"
-  }
+  },
+  "keywords": [],
+  "author": "TXSquirrel18",
+  "license": "MIT"
 }
