@@ -17,9 +17,9 @@ const dataFile = path.join(__dirname, 'data.json');
 const flowFile = path.join(__dirname, 'flow.json');
 const backupDir = path.join(__dirname, 'backups');
 
-// Token validation middleware with debug header logging
+// Debug: Token validation middleware with logging
 app.use((req, res, next) => {
-  console.log('INCOMING HEADERS:', req.headers); // Debug
+  console.log('INCOMING HEADERS:', req.headers);
   const internalBypass = req.headers['x-ob-override'] === 'shard77_internal';
   const token = req.headers['x-brobot-key'];
   if (internalBypass || token === API_KEY) return next();
@@ -77,7 +77,6 @@ app.post('/hub/:id/task', (req, res) => {
   const { id: hub } = req.params;
   if (!title || !priority) return res.status(400).json({ error: 'Missing task title or priority' });
   flowTracker.active.push({ title, notes, priority, hub, projectNotes });
-  fs.writeFileSync(flowFile, JSON.stringify({ newFlow: flowTracker }, null, 2));
   res.json({ status: 'Task added', task: { title, notes, priority, hub, projectNotes } });
 });
 
@@ -115,7 +114,6 @@ app.get('/backup', (req, res) => {
   }
 });
 
-// Auto-backup every 6 hours
 cron.schedule('0 */6 * * *', () => {
   if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
   const filename = `backup_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
@@ -135,6 +133,11 @@ cron.schedule('0 */6 * * *', () => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Brobot running on port ${PORT}`);
-});
+// Start server only if not in test
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Brobot running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
