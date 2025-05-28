@@ -14,6 +14,7 @@ const logFile = path.join(__dirname, 'logs.json');
 const intentFile = path.join(__dirname, 'intentModel.json');
 const memoryFile = path.join(__dirname, 'memory.json');
 const dataFile = path.join(__dirname, 'data.json');
+const flowFile = path.join(__dirname, 'flow.json');
 const backupDir = path.join(__dirname, 'backups');
 
 // Token validation middleware with debug header logging
@@ -21,11 +22,7 @@ app.use((req, res, next) => {
   console.log('INCOMING HEADERS:', req.headers); // Debug
   const internalBypass = req.headers['x-ob-override'] === 'shard77_internal';
   const token = req.headers['x-brobot-key'];
-
-  if (internalBypass || token === API_KEY) {
-    return next();
-  }
-
+  if (internalBypass || token === API_KEY) return next();
   return res.status(403).json({ error: 'Forbidden' });
 });
 
@@ -80,6 +77,7 @@ app.post('/hub/:id/task', (req, res) => {
   const { id: hub } = req.params;
   if (!title || !priority) return res.status(400).json({ error: 'Missing task title or priority' });
   flowTracker.active.push({ title, notes, priority, hub, projectNotes });
+  fs.writeFileSync(flowFile, JSON.stringify({ newFlow: flowTracker }, null, 2));
   res.json({ status: 'Task added', task: { title, notes, priority, hub, projectNotes } });
 });
 
@@ -102,7 +100,7 @@ app.get('/backup', (req, res) => {
     const archive = archiver('zip', { zlib: { level: 9 } });
     res.attachment('brobot_backup.zip');
     archive.pipe(res);
-    const files = ['logs.json', 'memory.json', 'intentModel.json', 'data.json'];
+    const files = ['logs.json', 'memory.json', 'intentModel.json', 'data.json', 'flow.json'];
     files.forEach(file => {
       const filePath = path.join(__dirname, file);
       if (fs.existsSync(filePath)) archive.file(filePath, { name: file });
@@ -126,7 +124,7 @@ cron.schedule('0 */6 * * *', () => {
   const archive = archiver('zip', { zlib: { level: 9 } });
 
   archive.pipe(output);
-  ['logs.json', 'memory.json', 'intentModel.json', 'data.json'].forEach(file => {
+  ['logs.json', 'memory.json', 'intentModel.json', 'data.json', 'flow.json'].forEach(file => {
     const filePath = path.join(__dirname, file);
     if (fs.existsSync(filePath)) archive.file(filePath, { name: file });
   });
