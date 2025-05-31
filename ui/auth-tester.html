@@ -1,66 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Brobot Auth Test</title>
-  <style>
-    body { font-family: sans-serif; padding: 2em; background: white; color: black; }
-    input, button { font-size: 1em; margin: 0.5em 0; width: 100%; }
-    textarea, pre { width: 100%; padding: 1em; margin-top: 1em; background: #f0f0f0; color: #000; font-family: monospace; }
-    .row { margin-bottom: 1em; }
-  </style>
-</head>
-<body>
-  <h2>Brobot Auth Test</h2>
+<script>
+  async function testRoute() {
+    const override = document.getElementById("override").value;
+    const key = document.getElementById("key").value;
+    const route = document.getElementById("route").value;
+    const box = document.getElementById("resultBox");
 
-  <div class="row">
-    <label>x-ob-override</label>
-    <input id="override" value="shard77_internal" />
-  </div>
-
-  <div class="row">
-    <label>x-brobot-key</label>
-    <input id="key" value="abc123secure" />
-  </div>
-
-  <div class="row">
-    <label>Route to Test</label>
-    <input id="route" value="/hub/P" />
-  </div>
-
-  <button onclick="testRoute()">Send</button>
-
-  <pre id="resultBox">[Awaiting input]</pre>
-
-  <script>
-    async function testRoute() {
-      const override = document.getElementById("override").value;
-      const key = document.getElementById("key").value;
-      const route = document.getElementById("route").value;
-      const box = document.getElementById("resultBox");
-
-      if (!route.startsWith("/")) {
-        box.textContent = "Error: Route must start with '/'";
-        return;
-      }
-
-      try {
-        const res = await fetch(route, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-ob-override": override,
-            "x-brobot-key": key
-          },
-          body: JSON.stringify({ query: "Test call from Auth UI" })
-        });
-
-        const data = await res.json();
-        box.textContent = JSON.stringify(data, null, 2);
-      } catch (e) {
-        box.textContent = "Error: " + e.message;
-      }
+    if (!route.startsWith("/")) {
+      box.textContent = "Error: Route must start with '/'";
+      return;
     }
-  </script>
-</body>
-</html>
+
+    try {
+      const res = await fetch(route, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-ob-override": override,
+          "x-brobot-key": key
+        },
+        body: JSON.stringify({ query: "Test call from Auth UI" })
+      });
+
+      const data = await res.json();
+      box.textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+      box.textContent = "Error: " + e.message;
+    }
+  }
+</script>
