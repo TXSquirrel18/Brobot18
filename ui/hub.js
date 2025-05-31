@@ -1,42 +1,34 @@
-
 document.addEventListener("DOMContentLoaded", () => {
-  const hubID = document.body.getAttribute("data-hub");
+  const hubTitle = document.getElementById("hub-title");
+  const hubDesc = document.getElementById("hub-desc");
+  const path = window.location.pathname;
+  const hubId = path.split("/").pop().split(".")[0].split("-").pop().toUpperCase();
 
-  async function postJSON(url, data) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    return res.json();
-  }
-
-  document.getElementById("submitTask").onclick = async () => {
-    const task = {
-      title: document.getElementById("taskTitle").value,
-      notes: document.getElementById("taskNotes").value,
-      priority: document.getElementById("taskPriority").value,
-      dueDate: document.getElementById("taskDue").value
-    };
-    const response = await postJSON(`/hub/${hubID}/task`, task);
-    alert(response.message || "Task submitted.");
+  const hubNames = {
+    "W": "Work & Financial Ops",
+    "C": "Creative Worlds",
+    "L": "Legal Affairs",
+    "S": "Social Life & Connections",
+    "P": "Personal Wellness",
+    "H": "Home Base & Operations",
+    "T": "Temporal Ops"
   };
 
-  document.getElementById("moveTask").onclick = async () => {
-    const move = {
-      title: document.getElementById("moveTitle").value,
-      newStatus: document.getElementById("newStatus").value
-    };
-    const response = await postJSON(`/hub/${hubID}/task/move`, move);
-    alert(response.message || "Task moved.");
-  };
+  hubTitle.textContent = `[${hubId}] ${hubNames[hubId] || "Unknown Hub"}`;
+  hubDesc.textContent = `This is the active overlay for the ${hubNames[hubId] || "hub"} domain.`;
 
-  document.getElementById("submitLog").onclick = async () => {
-    const log = {
-      type: document.getElementById("logType").value,
-      content: document.getElementById("logText").value
-    };
-    const response = await postJSON(`/hub/${hubID}/log`, log);
-    alert(response.message || "Log saved.");
-  };
+  fetch(`https://brobot18.onrender.com/hub/${hubId}/status`, {
+    headers: {
+      "x-ob-override": "shard77_internal"
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      const statusBox = document.createElement("pre");
+      statusBox.style.color = "#0ff";
+      statusBox.style.marginTop = "2em";
+      statusBox.textContent = JSON.stringify(data, null, 2);
+      document.body.appendChild(statusBox);
+    })
+    .catch(err => console.log("Status fetch error:", err));
 });
