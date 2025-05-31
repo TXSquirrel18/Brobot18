@@ -1,32 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Brobot Header Test</title>
+  <meta charset="UTF-8">
+  <title>Brobot Hub Tester</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #111;
+      color: #0f0;
+      padding: 2em;
+    }
+    input, button, textarea {
+      width: 100%;
+      margin-top: 0.5em;
+      padding: 0.5em;
+      font-family: monospace;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #0f0;
+    }
+    label {
+      margin-top: 1em;
+      display: block;
+      font-weight: bold;
+    }
+    button {
+      background: #0f0;
+      color: #000;
+      cursor: pointer;
+    }
+    pre {
+      background: #222;
+      color: #0f0;
+      padding: 1em;
+      overflow-x: auto;
+    }
+  </style>
 </head>
 <body>
-  <h2>Brobot Header Auth Test</h2>
-  <label>Override Key:</label>
-  <input type="text" id="override" value="shard77_internal"><br><br>
-  <label>Brobot Key:</label>
-  <input type="text" id="brokey" value="abc123secure"><br><br>
-  <button onclick="send()">Send /hub/S/status</button>
-  <pre id="output"></pre>
+  <h1>Brobot Hub Tester</h1>
+
+  <label for="url">Full URL (with https://)</label>
+  <input type="text" id="url" value="https://brobot18.onrender.com/hub/S/status">
+
+  <label for="override">x-ob-override</label>
+  <input type="text" id="override" value="shard77_internal">
+
+  <label for="key">x-brobot-key</label>
+  <input type="text" id="key" value="abc123secure">
+
+  <button onclick="sendRequest()">Send</button>
+
+  <label for="response">Response</label>
+  <pre id="response">{ Waiting for response... }</pre>
 
   <script>
-    async function send() {
-      const override = document.getElementById("override").value;
-      const brokey = document.getElementById("brokey").value;
+    async function sendRequest() {
+      const url = document.getElementById('url').value;
+      const override = document.getElementById('override').value;
+      const key = document.getElementById('key').value;
 
-      const res = await fetch("https://brobot18.onrender.com/hub/S/status", {
-        method: "GET",
-        headers: {
-          "x-ob-override": override,
-          "x-brobot-key": brokey
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'x-ob-override': override,
+            'x-brobot-key': key
+          }
+        });
+
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          document.getElementById('response').textContent = JSON.stringify(json, null, 2);
+        } catch {
+          document.getElementById('response').textContent = text;
         }
-      });
-
-      const text = await res.text();
-      document.getElementById("output").textContent = text;
+      } catch (err) {
+        document.getElementById('response').textContent = `Error: ${err}`;
+      }
     }
   </script>
 </body>
