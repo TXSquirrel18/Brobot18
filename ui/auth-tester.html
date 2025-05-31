@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Brobot Header Test</title>
+</head>
+<body>
+  <h2>Brobot Header Auth Test</h2>
+  <label>Override Key:</label>
+  <input type="text" id="override" value="shard77_internal"><br><br>
+  <label>Brobot Key:</label>
+  <input type="text" id="brokey" value="abc123secure"><br><br>
+  <button onclick="send()">Send /hub/S/status</button>
+  <pre id="output"></pre>
+
+  <script>
+    async function send() {
+      const override = document.getElementById("override").value;
+      const brokey = document.getElementById("brokey").value;
+
+      const res = await fetch("https://brobot18.onrender.com/hub/S/status", {
+        method: "GET",
+        headers: {
+          "x-ob-override": override,
+          "x-brobot-key": brokey
+        }
+      });
+
+      const text = await res.text();
+      document.getElementById("output").textContent = text;
+    }
+  </script>
+</body>
+</html>
