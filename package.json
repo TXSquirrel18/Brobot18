@@ -1,11 +1,12 @@
 {
   "name": "brobot18",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2"
   }
 }
