@@ -1,1 +1,28 @@
 
+---
+
+**File: `index.html`**
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Brobot Main Deck</title>
+  <style>
+    body { background: black; color: cyan; font-family: sans-serif; text-align: center; padding-top: 5vh; }
+    a { display: block; color: magenta; font-size: 1.2em; margin: 1em; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>Brobot 5.0</h1>
+  <p>Select a domain to enter:</p>
+  <a href="hub-work.html">[W] Work</a>
+  <a href="hub-social.html">[S] Social</a>
+  <a href="hub-legal.html">[L] Legal</a>
+  <a href="hub-creative.html">[C] Creative</a>
+  <a href="hub-temporal.html">[T] Temporal</a>
+  <a href="hub-personal.html">[P] Personal</a>
+  <a href="hub-home.html">[H] Home</a>
+</body>
+</html>
