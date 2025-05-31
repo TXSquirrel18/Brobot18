@@ -1,4 +1,3 @@
 #!/bin/bash
-
-echo "Starting Brobot Server..."
+echo "Launching Brobot 2.0..."
 node index.js
