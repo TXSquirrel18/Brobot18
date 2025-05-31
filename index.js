@@ -24,7 +24,12 @@ const OPENAI_KEY = process.env.OPENAI_KEY;
 const INTERNAL_KEY = "shard77_internal";
 const BROBOT_KEY = "abc123secure";
 
-// Routes
+app.get("/", (req, res) => {
+  const key = req.headers["x-brobot-key"];
+  if (key !== BROBOT_KEY) return res.status(403).send("Forbidden");
+  res.send("Brobot API running");
+});
+
 app.get("/ping", (req, res) => {
   res.json({ status: "online", timestamp: new Date().toISOString() });
 });
@@ -74,13 +79,13 @@ app.post("/brobot-gpt", checkAuth, async (req, res) => {
   }
 });
 
-// Cron Tasks
 cron.schedule("0 * * * *", () => {
   Object.entries(scheduler).forEach(([hub, tasks]) => {
     tasks.forEach(task => console.log(`[${hub}] Running ${task}`));
   });
 });
 
-// Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Brobot server live on port", PORT));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Brobot running on port", PORT));
+
+module.exports = app;
