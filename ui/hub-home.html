@@ -4,14 +4,71 @@
   <meta charset="UTF-8">
   <title>Home Hub</title>
   <style>
-    body { background: black; color: cyan; text-align: center; font-family: sans-serif; padding-top: 10vh; }
-    a { color: magenta; text-decoration: none; }
+    body {
+      background: black;
+      color: cyan;
+      font-family: sans-serif;
+      padding: 2em;
+      text-align: center;
+    }
+    textarea {
+      background: #000;
+      color: #0ff;
+      border: 1px solid #0ff;
+      width: 90%;
+      padding: 1em;
+      font-size: 1em;
+      margin-top: 1em;
+    }
+    button {
+      background: #0ff;
+      color: black;
+      border: none;
+      padding: 0.8em 1.2em;
+      font-size: 1em;
+      cursor: pointer;
+      margin-top: 1em;
+    }
+    pre {
+      background: #111;
+      color: #0ff;
+      padding: 1em;
+      margin-top: 2em;
+      text-align: left;
+      white-space: pre-wrap;
+      width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
   </style>
 </head>
 <body>
-  <h1 id="hub-title">Hub Name</h1>
-  <p id="hub-desc">This is a placeholder for this hub’s page.</p>
-  <a href="index.html">← Back to Deck</a>
-  <script src="hub.js"></script>
+  <h1>Home Hub</h1>
+  <p>Ask Brobot something specific to [H]:</p>
+
+  <textarea id="input" rows="4" placeholder="e.g., Which household system needs tuning? Suggest decay resets or zone sweeps."></textarea><br>
+  <button onclick="sendToBrobot()">Submit</button>
+
+  <pre id="responseBox">[Awaiting input]</pre>
+
+  <script>
+    async function sendToBrobot() {
+      const query = document.getElementById("input").value;
+      const box = document.getElementById("responseBox");
+      box.textContent = "Thinking...";
+
+      const res = await fetch("/brobot-gpt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-ob-override": "shard77_internal"
+        },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await res.json();
+      box.textContent = data.choices?.[0]?.message?.content || JSON.stringify(data);
+    }
+  </script>
 </body>
 </html>
