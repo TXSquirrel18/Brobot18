@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Brobot Header Test</title>
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    input, button { font-size: 1.1em; margin-top: 0.5em; display: block; width: 100%; }
+    pre { white-space: pre-wrap; background: #eee; padding: 1em; margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h2>Brobot Auth Test</h2>
+
+  <label for="override">x-ob-override</label>
+  <input id="override" placeholder="e.g. shard77_internal" value="shard77_internal">
+
+  <label for="brokey">x-brobot-key</label>
+  <input id="brokey" placeholder="e.g. abc123secure" value="abc123secure">
+
+  <label for="route">Route to Test</label>
+  <input id="route" value="/hub/S/status">
+
+  <button onclick="send()">Send</button>
+  <pre id="result"></pre>
+
+  <script>
+    const overrideInput = document.getElementById('override');
+    const brokeyInput = document.getElementById('brokey');
+    const routeInput = document.getElementById('route');
+    const resultBox = document.getElementById('result');
+
+    // Load saved headers
+    overrideInput.value = localStorage.getItem('ob') || 'shard77_internal';
+    brokeyInput.value = localStorage.getItem('key') || 'abc123secure';
+
+    async function send() {
+      const override = overrideInput.value;
+      const brokey = brokeyInput.value;
+      const route = routeInput.value;
+
+      // Save values
+      localStorage.setItem('ob', override);
+      localStorage.setItem('key', brokey);
+
+      try {
+        const res = await fetch(`https://brobot18.onrender.com${route}`, {
+          headers: {
+            'x-ob-override': override,
+            'x-brobot-key': brokey
+          }
+        });
+        const text = await res.text();
+        resultBox.textContent = text;
+      } catch (e) {
+        resultBox.textContent = 'Error: ' + e.message;
+      }
+    }
+  </script>
+</body>
+</html>
