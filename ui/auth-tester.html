@@ -1,82 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Brobot Hub Tester</title>
+  <title>Brobot Auth Test</title>
   <style>
-    body {
-      font-family: monospace;
-      background: #111;
-      color: #0f0;
-      padding: 2em;
-    }
-    input, button, textarea {
-      width: 100%;
-      margin-top: 0.5em;
-      padding: 0.5em;
-      font-family: monospace;
-      background: #222;
-      color: #0f0;
-      border: 1px solid #0f0;
-    }
-    label {
-      margin-top: 1em;
-      display: block;
-      font-weight: bold;
-    }
-    button {
-      background: #0f0;
-      color: #000;
-      cursor: pointer;
-    }
-    pre {
-      background: #222;
-      color: #0f0;
-      padding: 1em;
-      overflow-x: auto;
-    }
+    body { font-family: sans-serif; padding: 2em; background: white; color: black; }
+    input, button { font-size: 1em; margin: 0.5em 0; width: 100%; }
+    textarea, pre { width: 100%; padding: 1em; margin-top: 1em; background: #f0f0f0; color: #000; font-family: monospace; }
+    .row { margin-bottom: 1em; }
   </style>
 </head>
 <body>
-  <h1>Brobot Hub Tester</h1>
+  <h2>Brobot Auth Test</h2>
 
-  <label for="url">Full URL (with https://)</label>
-  <input type="text" id="url" value="https://brobot18.onrender.com/hub/S/status">
+  <div class="row">
+    <label>x-ob-override</label>
+    <input id="override" value="shard77_internal" />
+  </div>
 
-  <label for="override">x-ob-override</label>
-  <input type="text" id="override" value="shard77_internal">
+  <div class="row">
+    <label>x-brobot-key</label>
+    <input id="key" value="abc123secure" />
+  </div>
 
-  <label for="key">x-brobot-key</label>
-  <input type="text" id="key" value="abc123secure">
+  <div class="row">
+    <label>Route to Test</label>
+    <input id="route" value="/hub/P" />
+  </div>
 
-  <button onclick="sendRequest()">Send</button>
+  <button onclick="testRoute()">Send</button>
 
-  <label for="response">Response</label>
-  <pre id="response">{ Waiting for response... }</pre>
+  <pre id="resultBox">[Awaiting input]</pre>
 
   <script>
-    async function sendRequest() {
-      const url = document.getElementById('url').value;
-      const override = document.getElementById('override').value;
-      const key = document.getElementById('key').value;
+    async function testRoute() {
+      const override = document.getElementById("override").value;
+      const key = document.getElementById("key").value;
+      const route = document.getElementById("route").value;
+      const box = document.getElementById("resultBox");
+
+      if (!route.startsWith("/")) {
+        box.textContent = "Error: Route must start with '/'";
+        return;
+      }
 
       try {
-        const res = await fetch(url, {
+        const res = await fetch(route, {
+          method: "POST",
           headers: {
-            'x-ob-override': override,
-            'x-brobot-key': key
-          }
+            "Content-Type": "application/json",
+            "x-ob-override": override,
+            "x-brobot-key": key
+          },
+          body: JSON.stringify({ query: "Test call from Auth UI" })
         });
 
-        const text = await res.text();
-        try {
-          const json = JSON.parse(text);
-          document.getElementById('response').textContent = JSON.stringify(json, null, 2);
-        } catch {
-          document.getElementById('response').textContent = text;
-        }
-      } catch (err) {
-        document.getElementById('response').textContent = `Error: ${err}`;
+        const data = await res.json();
+        box.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        box.textContent = "Error: " + e.message;
       }
     }
   </script>
