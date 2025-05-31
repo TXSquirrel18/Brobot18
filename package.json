@@ -1,16 +1,19 @@
-{{
+{
   "name": "brobot18",
-  "version": "2.0.0",
+  "version": "1.0.0",
+  "description": "Command Deck + Life Ops Assistant for Presto",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": [],
+  "author": "TXSquirrel18",
+  "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "node-cron": "^3.0.2",
-    "node-fetch": "^2.6.11"
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "body-parser": "^1.20.2"
   }
 }
