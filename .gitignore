@@ -1,3 +1,7 @@
-# runtime data
-data.json
+.env
+node_modules/
 logs.json
+memory.json
+flow.json
+data.json
+intentModel.json
