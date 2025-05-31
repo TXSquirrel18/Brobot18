@@ -1,67 +1,50 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const cors = require("cors");
-
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Static UI file support
-app.use("/ui", express.static(path.join(__dirname, "ui")));
+const AUTH_KEY = 'abc123secure';
+const INTERNAL_KEY = 'shard77_internal';
 
 // Auth middleware
-const authMiddleware = (req, res, next) => {
-  const override = req.headers["x-ob-override"];
-  const fallback = req.headers["x-brobot-key"];
-  if (override === "shard77_internal" || fallback === "abc123secure") {
+function checkAuth(req, res, next) {
+  const internal = req.headers['x-ob-override'];
+  const external = req.headers['x-brobot-key'];
+  if (internal === INTERNAL_KEY || external === AUTH_KEY) {
     return next();
   }
-  res.status(403).json({ error: "Forbidden" });
-};
+  return res.status(401).json({ error: 'Unauthorized' });
+}
 
-// Test route
-app.get("/ping", (req, res) => {
-  res.json({ status: "ok", time: new Date().toISOString() });
+// Static UI
+app.use('/', express.static('ui'));
+
+// Health check
+app.get('/ping', (req, res) => {
+  res.json({ status: 'alive', time: new Date().toISOString() });
 });
 
-// Hub route - General dynamic handler
-app.get("/hub/:id", authMiddleware, (req, res) => {
-  const { id } = req.params;
-  res.json({ hub: id, message: `Welcome to Hub ${id}` });
+// Dynamic Hub Response
+app.get('/hub/:id', checkAuth, (req, res) => {
+  const hubId = req.params.id.toUpperCase();
+  res.json({ hub: hubId, status: 'connected' });
 });
 
-// Specific route: Hub S - Status
-app.get("/hub/S/status", authMiddleware, (req, res) => {
+// Work Notes
+app.get('/hub/W/notes', checkAuth, (req, res) => {
+  const notes = JSON.parse(fs.readFileSync('data.json')).workNotes || [];
+  res.json({ notes });
+});
+
+// Social Status
+app.get('/hub/S/status', checkAuth, (req, res) => {
+  const flow = JSON.parse(fs.readFileSync('flow.json'));
   res.json({
-    hub: "Social",
-    status: "active",
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Specific route: Hub W - Notes
-app.get("/hub/W/notes", authMiddleware, (req, res) => {
-  res.json({
-    hub: "Work Ops",
-    notes: [
-      "Complete client outreach batch",
-      "Push Brobot V3 + C7 config",
-      "Sync time blocks with legal calendar",
-    ],
-    updated: new Date().toISOString(),
-  });
-});
-
-// Catch-all fallback
-app.use((req, res) => {
-  res.status(404).json({ error: "Not Found" });
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Brobot Server running on port ${PORT}`);
-});
+    hub: 'Social',
+    active: flow.active.filter(p => p.includes('[S]')).length,
+    paused: flow.paused.filter(p => p.includes('[S]')).length,
+    completed: flow.completed.filter(p => p.inc
