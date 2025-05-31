@@ -3,48 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Work Hub</title>
+  <script src="hub.js"></script>
   <style>
-    body {
-      background: black;
-      color: cyan;
-      font-family: sans-serif;
-      padding: 2em;
-      text-align: center;
-    }
-    textarea {
-      background: #000;
-      color: #0ff;
-      border: 1px solid #0ff;
-      width: 90%;
-      padding: 1em;
-      font-size: 1em;
-      margin-top: 1em;
-    }
-    button {
-      background: #0ff;
-      color: black;
-      border: none;
-      padding: 0.8em 1.2em;
-      font-size: 1em;
-      cursor: pointer;
-      margin-top: 1em;
-    }
-    pre {
-      background: #111;
-      color: #0ff;
-      padding: 1em;
-      margin-top: 2em;
-      text-align: left;
-      white-space: pre-wrap;
-      width: 90%;
-      margin-left: auto;
-      margin-right: auto;
-    }
+    body { background: black; color: cyan; font-family: sans-serif; padding: 2em; text-align: center; }
+    textarea { background: #000; color: #0ff; border: 1px solid #0ff; width: 90%; padding: 1em; font-size: 1em; margin-top: 1em; }
+    button { background: #0ff; color: black; border: none; padding: 0.8em 1.2em; font-size: 1em; cursor: pointer; margin-top: 1em; }
+    pre { background: #111; color: #0ff; padding: 1em; margin-top: 2em; text-align: left; white-space: pre-wrap; width: 90%; margin-left: auto; margin-right: auto; }
   </style>
 </head>
 <body>
-  <h1>Work Hub</h1>
-  <p>Ask Brobot something specific to [W]:</p>
+  <h1 id="hub-title">[W] Work</h1>
+  <p id="hub-desc">Ask Brobot something specific to [W]</p>
 
   <textarea id="input" rows="4" placeholder="e.g., What’s active in [W]? Suggest next 3 steps."></textarea><br>
   <button onclick="sendToBrobot()">Submit</button>
