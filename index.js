@@ -1,91 +1,72 @@
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const fetch = require("node-fetch");
-const dotenv = require("dotenv");
-const cron = require("node-cron");
-
-const { checkAuth } = require("./auth");
-const limiter = require("./rateLimiter");
-const { saveMemory, loadMemory } = require("./memoryHandler");
-
-dotenv.config();
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const cron = require('node-cron');
+const bodyParser = require('body-parser');
+const limiter = require('./rateLimiter');
+const memoryHandler = require('./memoryHandler');
+const auth = require('./auth');
 
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
 app.use(bodyParser.json());
 app.use(limiter);
 
-let memory = loadMemory();
-const logs = require("./logs.json");
-const scheduler = require("./scheduler.json");
+// File paths
+const dataPath = path.join(__dirname, 'data.json');
+const flowPath = path.join(__dirname, 'flow.json');
+const memoryPath = path.join(__dirname, 'memory.json');
+const logsPath = path.join(__dirname, 'logs.json');
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
-const INTERNAL_KEY = "shard77_internal";
-const BROBOT_KEY = "abc123secure";
+// Utilities
+const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
+const writeJson = (filePath, data) => fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
-app.get("/", (req, res) => {
-  const key = req.headers["x-brobot-key"];
-  if (key !== BROBOT_KEY) return res.status(403).send("Forbidden");
-  res.send("Brobot API running");
+// API routes
+app.get('/', (req, res) => {
+  res.send('🧠 Brobot18 backend running');
 });
 
-app.get("/ping", (req, res) => {
-  res.json({ status: "online", timestamp: new Date().toISOString() });
+app.post('/memory', (req, res) => {
+  const entry = req.body;
+  memoryHandler(entry, memoryPath);
+  res.status(200).json({ status: 'ok', entry });
 });
 
-app.get("/hub/:id", (req, res) => {
-  const id = req.params.id;
-  res.json({ hub: id, message: `Accessing Hub ${id}` });
+app.post('/auth', auth);
+
+// Fetch state
+app.get('/data', (req, res) => {
+  const data = readJson(dataPath);
+  res.json(data);
 });
 
-app.get("/hub/:id/logs", checkAuth, (req, res) => {
-  res.json(logs[req.params.id] || []);
+app.get('/flow', (req, res) => {
+  const flow = readJson(flowPath);
+  res.json(flow);
 });
 
-app.post("/admin/reset/:hub", checkAuth, (req, res) => {
-  const hub = req.params.hub;
-  memory[hub] = {};
-  saveMemory(memory);
-  res.send({ status: "reset", hub });
+app.get('/memory', (req, res) => {
+  const memory = readJson(memoryPath);
+  res.json(memory);
 });
 
-app.post("/brobot-gpt", checkAuth, async (req, res) => {
-  const query = req.body.query;
-  if (!query || query.length < 2) return res.status(400).send({ error: "Query too short" });
-
-  const mode = memory.mode || "assistant";
-  const prompt = mode === "agent"
-    ? `Brobot, make a recommendation and act: ${query}`
-    : `Brobot, answer this: ${query}`;
-
-  try {
-    const result = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
-    const data = await result.json();
-    res.json({ reply: data.choices?.[0]?.message?.content || "[No reply]" });
-  } catch (err) {
-    res.status(500).send({ error: "GPT Proxy Failure", detail: err.message });
-  }
+app.get('/logs', (req, res) => {
+  const logs = readJson(logsPath);
+  res.json(logs);
 });
 
-cron.schedule("0 * * * *", () => {
-  Object.entries(scheduler).forEach(([hub, tasks]) => {
-    tasks.forEach(task => console.log(`[${hub}] Running ${task}`));
-  });
+// Cron: autosave memory to logs every 10 mins
+cron.schedule('*/10 * * * *', () => {
+  const memory = readJson(memoryPath);
+  const logs = readJson(logsPath);
+  logs.push({ timestamp: new Date().toISOString(), memory });
+  writeJson(logsPath, logs);
+  console.log('🕒 Memory snapshot saved to logs.');
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Brobot running on port", PORT));
-
-module.exports = app;
+// Server start
+app.listen(PORT, () => {
+  console.log(`🚀 Brobot18 listening on port ${PORT}`);
+});
