@@ -1,6 +1,9 @@
 {
-  "socialStatus": "initialized",
   "workNotes": [],
-  "SNotes": [],
-  "WNotes": []
+  "socialContacts": [],
+  "legalDocs": [],
+  "creativeDrafts": [],
+  "homeTasks": [],
+  "personalReflections": [],
+  "temporalRhythms": []
 }
