@@ -5,13 +5,18 @@ const fetch = require("node-fetch");
 const dotenv = require("dotenv");
 const cron = require("node-cron");
 
+const { checkAuth } = require("./auth");
+const limiter = require("./rateLimiter");
+const { saveMemory, loadMemory } = require("./memoryHandler");
+
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.use(limiter);
 
-const memory = require("./memory.json");
+let memory = loadMemory();
 const logs = require("./logs.json");
 const scheduler = require("./scheduler.json");
 
@@ -19,7 +24,7 @@ const OPENAI_KEY = process.env.OPENAI_KEY;
 const INTERNAL_KEY = "shard77_internal";
 const BROBOT_KEY = "abc123secure";
 
-// 🔹 Routes
+// Routes
 app.get("/ping", (req, res) => {
   res.json({ status: "online", timestamp: new Date().toISOString() });
 });
@@ -29,24 +34,18 @@ app.get("/hub/:id", (req, res) => {
   res.json({ hub: id, message: `Accessing Hub ${id}` });
 });
 
-app.get("/hub/:id/logs", (req, res) => {
+app.get("/hub/:id/logs", checkAuth, (req, res) => {
   res.json(logs[req.params.id] || []);
 });
 
-app.post("/admin/reset/:hub", (req, res) => {
+app.post("/admin/reset/:hub", checkAuth, (req, res) => {
   const hub = req.params.hub;
   memory[hub] = {};
+  saveMemory(memory);
   res.send({ status: "reset", hub });
 });
 
-app.post("/brobot-gpt", async (req, res) => {
-  const override = req.headers["x-ob-override"];
-  const fallbackKey = req.headers["x-brobot-key"];
-
-  if (override !== INTERNAL_KEY && fallbackKey !== BROBOT_KEY) {
-    return res.status(401).send({ error: "Unauthorized" });
-  }
-
+app.post("/brobot-gpt", checkAuth, async (req, res) => {
   const query = req.body.query;
   if (!query || query.length < 2) return res.status(400).send({ error: "Query too short" });
 
@@ -75,13 +74,13 @@ app.post("/brobot-gpt", async (req, res) => {
   }
 });
 
-// 🔁 Cron Scheduler
+// Cron Tasks
 cron.schedule("0 * * * *", () => {
   Object.entries(scheduler).forEach(([hub, tasks]) => {
     tasks.forEach(task => console.log(`[${hub}] Running ${task}`));
   });
 });
 
-// 🌐 Launch
+// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Brobot server live on port", PORT));
