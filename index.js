@@ -3,56 +3,51 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const fetch = require('node-fetch');
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const OPENAI_KEY = process.env.OPENAI_KEY;
 
-app.use(cors());
-app.use(express.json());
-
 const AUTH_KEY = 'abc123secure';
 const INTERNAL_KEY = 'shard77_internal';
+
+app.use(cors({
+  origin: ['https://brobot18.onrender.com'],
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'x-ob-override', 'x-brobot-key']
+}));
+
+app.use(express.json());
 
 function checkAuth(req, res, next) {
   const internal = req.headers['x-ob-override'];
   const external = req.headers['x-brobot-key'];
-  if (internal === INTERNAL_KEY || external === AUTH_KEY) {
-    return next();
-  }
+  if (internal === INTERNAL_KEY || external === AUTH_KEY) return next();
   return res.status(401).json({ error: 'Unauthorized' });
 }
 
-app.use('/', express.static('ui'));
-
-app.get('/ping', (req, res) => {
-  res.json({ status: 'alive', time: new Date().toISOString() });
+const gptLimiter = rateLimit({
+  windowMs: 60000,
+  max: 5,
+  message: { error: "Too many GPT requests. Slow down." }
 });
 
-app.get('/hub/:id', checkAuth, (req, res) => {
-  const hubId = req.params.id.toUpperCase();
-  res.json({ hub: hubId, status: 'connected' });
+let gptEnabled = true;
+
+app.post('/disable-gpt', checkAuth, (req, res) => {
+  gptEnabled = false;
+  res.json({ status: "GPT temporarily disabled" });
 });
 
-app.get('/hub/W/notes', checkAuth, (req, res) => {
-  const notes = JSON.parse(fs.readFileSync('data.json')).workNotes || [];
-  res.json({ notes });
-});
-
-app.get('/hub/S/status', checkAuth, (req, res) => {
-  const flow = JSON.parse(fs.readFileSync('flow.json'));
-  res.json({
-    hub: 'Social',
-    active: flow.active.filter(p => p.includes('[S]')).length,
-    paused: flow.paused.filter(p => p.includes('[S]')).length,
-    completed: flow.completed.filter(p => p.includes('[S]')).length
-  });
-});
-
-// GPT Proxy Endpoint
-app.post('/brobot-gpt', checkAuth, async (req, res) => {
+app.post('/brobot-gpt', checkAuth, gptLimiter, async (req, res) => {
   try {
+    if (!gptEnabled) return res.status(503).json({ error: "GPT is currently disabled" });
+
     const { query } = req.body;
-    if (!query) return res.status(400).json({ error: "Missing query" });
+    if (!query || query.length > 500 || /<script/i.test(query)) {
+      return res.status(400).json({ error: "Invalid query" });
+    }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -76,7 +71,10 @@ app.post('/brobot-gpt', checkAuth, async (req, res) => {
   }
 });
 
+app.use('/', express.static('ui', { index: false }));
+
 app.use((req, res) => {
+  fs.appendFileSync("logs.json", JSON.stringify({ time: new Date(), path: req.path }) + "\n");
   res.status(404).json({ error: "Not Found" });
 });
 
